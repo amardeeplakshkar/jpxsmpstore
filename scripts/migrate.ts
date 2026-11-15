@@ -16,6 +16,13 @@ async function main() {
     max: 1,
     ssl: isRemote ? { rejectUnauthorized: false } : undefined,
   });
+  // If core tables don't exist in the database, clear stale drizzle migration history so it re-runs.
+  const check = await pool.query("SELECT to_regclass('public.store_settings') as tbl");
+  if (!check.rows[0]?.tbl) {
+    console.log("Tables missing; resetting migration tracker to re-apply...");
+    await pool.query("DROP SCHEMA IF EXISTS drizzle CASCADE;");
+  }
+
   await migrate(drizzle({ client: pool }), { migrationsFolder: "src/db/migrations" });
   await pool.end();
   console.log("Migrations applied");
