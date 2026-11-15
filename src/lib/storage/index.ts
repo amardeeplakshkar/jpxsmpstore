@@ -23,6 +23,9 @@ export function sniffImageType(buf: Buffer): "image/png" | "image/jpeg" | "image
 }
 
 function localRoot() {
+  if (process.env.VERCEL) {
+    return path.resolve("/tmp/storage");
+  }
   return path.resolve(getEnv().LOCAL_STORAGE_DIR);
 }
 
