@@ -15,7 +15,7 @@ export default async function OrderPage({ params }: { params: Promise<{ orderNum
   const order = await getOwnedOrder(user.id, orderNumber.toUpperCase());
   if (!order || !order.payment) notFound();
   const cfg = await getSetting("payment");
-  const view = toCustomerOrder(order);
+  const view = toCustomerOrder(order);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
   const payable = ["PENDING", "VERIFYING"].includes(order.paymentStatus) && order.fulfillmentStatus !== "CANCELLED";
   const qr = payable && cfg.qrEnabled ? await upiQrDataUrl(order.payment.upiUri) : null;
 
@@ -52,7 +52,7 @@ export default async function OrderPage({ params }: { params: Promise<{ orderNum
         />
 
         <aside className="gateway-side space-y-4 border-t p-6 sm:p-8 lg:border-l lg:border-t-0" aria-label="Order details">
-          <h2 className="text-sm font-extrabold uppercase text-slate-700">Order details</h2>
+          <h2 className="text-xs font-black uppercase tracking-wider text-muted">Order details</h2>
           <ul className="space-y-3">
             {view.items.map((item, i) => (
               <li key={i} className="flex gap-3">

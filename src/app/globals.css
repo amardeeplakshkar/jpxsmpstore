@@ -165,24 +165,19 @@
   .feature-card:hover { border-color: color-mix(in srgb, var(--card) 35%, transparent); background: color-mix(in srgb, var(--card) 6%, #131924); transform: translateY(-3px); }
   .buy-box { background: var(--color-sunken); border: 1px solid var(--color-border); border-radius: 24px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.6); }
 
-  /* ---- Light payment gateway (checkout + payment page) ---- */
+  /* ---- Payment gateway (checkout + payment page) ---- */
   .gateway {
-    --color-background: #ffffff;
-    --color-surface: #f8fafc;
-    --color-elevated: #f1f5f9;
-    --color-sunken: #f1f5f9;
-    --color-foreground: #0f172a;
-    --color-muted: #64748b;
-    --color-border: #e2e8f0;
-    --color-secondary: #9333ea;
-    --color-accent: #9333ea;
-    color-scheme: light;
-    color: var(--color-foreground);
-    background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px rgb(0 0 0 / 0.8);
+    color-scheme: dark;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgb(0 0 0 / 0.6);
   }
-  .gateway input, .gateway textarea, .gateway select { background: #fff; border-width: 2px; border-color: #cbd5e1; color: #0f172a; font-weight: 700; }
-  .gateway input:focus, .gateway textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 4px rgb(168 85 247 / 0.1); }
-  .gateway-side { background: #f8fafc; border-color: #e2e8f0; }
+  .gateway-side {
+    background: var(--color-sunken);
+    border-color: var(--color-border);
+  }
 
   .stat-box { background: var(--color-sunken); border-radius: 12px; border-left: 3px solid var(--st, #a855f7); box-shadow: 0 5px 15px rgb(0 0 0 / 0.2); }
 
@@ -190,7 +185,6 @@
 
   .prose-store p { margin-bottom: 0.9rem; line-height: 1.7; color: #cbd5e1; font-weight: 500; }
   .prose-store h2 { font-size: 1.25rem; font-weight: 900; margin: 1.5rem 0 0.5rem; color: #fff; }
-  .gateway .prose-store p { color: #475569; }
 
   /* legacy helpers kept so older markup still renders on-theme */
   .bg-blocks { background-image: radial-gradient(circle at 30% 20%, rgb(168 85 247 / 0.12), transparent 60%); }

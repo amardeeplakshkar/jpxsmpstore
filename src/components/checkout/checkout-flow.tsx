@@ -216,7 +216,7 @@ export function CheckoutFlow({ quote, buyerName, source }: { quote: Quote; buyer
       </div>
 
       <aside className="gateway-side h-fit border-t p-6 sm:p-8 lg:border-l lg:border-t-0" aria-label="Order summary">
-        <h2 className="mb-4 text-sm font-extrabold uppercase text-slate-700">Order summary ({quote.lines.reduce((a, l) => a + l.qty, 0)} item{quote.lines.reduce((a, l) => a + l.qty, 0) === 1 ? "" : "s"})</h2>
+        <h2 className="mb-4 text-xs font-black uppercase tracking-wider text-muted">Order summary ({quote.lines.reduce((a, l) => a + l.qty, 0)} item{quote.lines.reduce((a, l) => a + l.qty, 0) === 1 ? "" : "s"})</h2>
         <ul className="space-y-3">
           {quote.lines.map((l) => (
             <li key={l.slug} className="flex gap-3">
@@ -246,7 +246,7 @@ export function CheckoutFlow({ quote, buyerName, source }: { quote: Quote; buyer
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">Discount{quote.discount ? ` (${quote.discount.label})` : ""}</dt>
-            <dd className={quote.discountPaise > 0 ? "font-semibold text-emerald-700" : ""}>{quote.discountPaise > 0 ? `- ${formatINR(quote.discountPaise)}` : formatINR(0)}</dd>
+            <dd className={quote.discountPaise > 0 ? "font-semibold text-emerald-400" : ""}>{quote.discountPaise > 0 ? `- ${formatINR(quote.discountPaise)}` : formatINR(0)}</dd>
           </div>
           <div className="flex justify-between border-t border-border pt-3 text-base font-bold">
             <dt>Total payable</dt>

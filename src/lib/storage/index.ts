@@ -101,7 +101,7 @@ export async function putObject(opts: {
 /** Reads an object's bytes server-side. Private objects are only ever streamed through authorised routes. */
 export async function getObject(storageKey: string): Promise<Buffer> {
   if (storageKey.startsWith("local:")) {
-    return readFile(safeLocalPath(storageKey.slice("local:".length)));
+    return readFile(/*turbopackIgnore: true*/ safeLocalPath(storageKey.slice("local:".length)));
   }
   if (storageKey.startsWith("cloudinary:")) {
     const [, visibility, ...rest] = storageKey.split(":");
