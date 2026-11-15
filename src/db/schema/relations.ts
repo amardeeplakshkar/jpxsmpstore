@@ -2,6 +2,7 @@ import { relations } from "drizzle-orm";
 import {
   adminUsers,
   categories,
+  gameModes,
   fulfillments,
   orderItems,
   orderStatusHistory,
@@ -24,8 +25,10 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, { fields: [sessions.userId], references: [users.id] }),
 }));
 export const categoriesRelations = relations(categories, ({ many }) => ({ products: many(products) }));
+export const gameModesRelations = relations(gameModes, ({ many }) => ({ products: many(products) }));
 export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, { fields: [products.categoryId], references: [categories.id] }),
+  gameMode: one(gameModes, { fields: [products.gameModeId], references: [gameModes.id] }),
   images: many(productImages),
 }));
 export const productImagesRelations = relations(productImages, ({ one }) => ({

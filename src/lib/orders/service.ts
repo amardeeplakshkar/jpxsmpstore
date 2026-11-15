@@ -1,20 +1,20 @@
-import { and, eq, gt, inArray, isNull, count } from "drizzle-orm";
+import { and, eq, gt, inArray, count } from "drizzle-orm";
 import { db } from "db/client";
-import { orderItems, orders, payments, products } from "db/schema";
+import { orderItems, orders, payments } from "db/schema";
 import { ApiError, isUniqueViolation } from "lib/api";
 import type { SessionUser } from "lib/auth/session";
 import { generateOrderNumber } from "lib/orders/number";
 import { buildUpiUri } from "lib/payments/upi";
 import { addHistory } from "lib/payments/transitions";
 import { getSetting } from "lib/settings";
-import { effectivePricePaise } from "lib/utils";
+import { quoteCart } from "lib/orders/quote";
 import type { CheckoutInput } from "lib/validation/common";
 
 const MAX_OPEN_ORDERS = 5;
 
 /**
  * Creates an order from a checkout request. Prices come only from the database; the client only
- * sends the product slug. The (user_id, idempotency_key) unique index makes retries return the same order.
+ * sends product slugs and quantities. The (user_id, idempotency_key) unique index makes retries return the same order.
  */
 export async function createOrder(user: SessionUser, input: CheckoutInput) {
   const existing = await db.query.orders.findFirst({
@@ -22,17 +22,21 @@ export async function createOrder(user: SessionUser, input: CheckoutInput) {
   });
   if (existing) return { order: existing, created: false };
 
-  const product = await db.query.products.findFirst({
-    where: and(eq(products.slug, input.productSlug), eq(products.isActive, true), isNull(products.deletedAt)),
-    with: { category: true },
-  });
-  if (!product) throw new ApiError(404, "PRODUCT_NOT_FOUND", "This product is no longer available.");
-  if (input.gameEdition === "JAVA" && !product.javaAvailable) {
-    throw new ApiError(422, "EDITION_UNAVAILABLE", "This product is not available for Java Edition.");
+  const requested = input.items?.length ? input.items : [{ slug: input.productSlug as string, qty: 1 }];
+  const quote = await quoteCart(requested);
+  if (quote.unavailable.length) {
+    throw new ApiError(409, "PRODUCT_UNAVAILABLE", `No longer available: ${quote.unavailable.join(", ")}. Remove it from your cart and try again.`);
   }
-  if (input.gameEdition === "BEDROCK" && !product.bedrockAvailable) {
-    throw new ApiError(422, "EDITION_UNAVAILABLE", "This product is not available for Bedrock Edition.");
+  if (quote.lines.length === 0) throw new ApiError(422, "CART_EMPTY", "Your cart is empty.");
+  const wrongEdition = quote.lines.filter((l) => (input.gameEdition === "JAVA" ? !l.javaAvailable : !l.bedrockAvailable));
+  if (wrongEdition.length) {
+    throw new ApiError(
+      422,
+      "EDITION_UNAVAILABLE",
+      `Not available for ${input.gameEdition === "JAVA" ? "Java" : "Bedrock"} Edition: ${wrongEdition.map((l) => l.name).join(", ")}.`,
+    );
   }
+  if (quote.totalPaise < 100) throw new ApiError(422, "AMOUNT_TOO_LOW", "Order total must be at least ₹1.");
 
   const payment = await getSetting("payment");
   if (!payment.upiId || !payment.qrEnabled) {
@@ -49,8 +53,6 @@ export async function createOrder(user: SessionUser, input: CheckoutInput) {
     throw new ApiError(429, "TOO_MANY_OPEN_ORDERS", "You have too many unpaid orders. Complete or wait for them to expire first.");
   }
 
-  const unit = effectivePricePaise(product);
-  const discount = product.regularPricePaise - unit;
   const expiresAt = new Date(Date.now() + payment.expiryMinutes * 60_000);
 
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -66,44 +68,50 @@ export async function createOrder(user: SessionUser, input: CheckoutInput) {
             minecraftUsername: input.minecraftUsername,
             gameEdition: input.gameEdition,
             giftNote: input.purchaseType === "GIFT" ? (input.giftNote ?? null) : null,
-            subtotalPaise: product.regularPricePaise,
-            discountPaise: discount,
-            totalPaise: unit,
+            subtotalPaise: quote.subtotalPaise,
+            discountPaise: quote.discountPaise,
+            totalPaise: quote.totalPaise,
             idempotencyKey: input.idempotencyKey,
             paymentExpiresAt: expiresAt,
           })
           .returning();
-        await tx.insert(orderItems).values({
-          orderId: o.id,
-          productId: product.id,
-          productSnapshot: {
-            productId: product.id,
-            name: product.name,
-            slug: product.slug,
-            type: product.type,
-            imageUrl: product.imageUrl,
-            categoryName: product.category?.name ?? null,
-            shortDescription: product.shortDescription,
-            metadata: product.metadata,
-          },
-          quantity: 1,
-          regularPricePaise: product.regularPricePaise,
-          unitPricePaise: unit,
-          discountPaise: discount,
-          lineTotalPaise: unit,
-        });
+        await tx.insert(orderItems).values(
+          quote.lines.map((l) => {
+            const p = quote.raw.get(l.slug)!;
+            return {
+              orderId: o.id,
+              productId: l.productId,
+              productSnapshot: {
+                productId: l.productId,
+                name: l.name,
+                slug: l.slug,
+                type: l.type,
+                imageUrl: l.imageUrl,
+                categoryName: l.categoryName,
+                gameModeName: l.gameModeName,
+                shortDescription: p.shortDescription,
+                metadata: p.metadata,
+              },
+              quantity: l.qty,
+              regularPricePaise: l.regularPaise,
+              unitPricePaise: l.unitPaise,
+              discountPaise: l.lineRegularPaise - l.lineTotalPaise,
+              lineTotalPaise: l.lineTotalPaise,
+            };
+          }),
+        );
         await tx.insert(payments).values({
           orderId: o.id,
-          amountPaise: unit,
+          amountPaise: quote.totalPaise,
           upiId: payment.upiId,
           payeeName: payment.payeeName,
-          upiUri: buildUpiUri({ upiId: payment.upiId, payeeName: payment.payeeName, amountPaise: unit, orderNumber }),
+          upiUri: buildUpiUri({ upiId: payment.upiId, payeeName: payment.payeeName, amountPaise: quote.totalPaise, orderNumber }),
           expiresAt,
         });
         await addHistory(tx, o.id, {
           kind: "EVENT",
           to: "PENDING",
-          note: `Order created (${input.purchaseType === "GIFT" ? "gift" : "self"}, ${input.gameEdition})`,
+          note: `Order created (${input.purchaseType === "GIFT" ? "gift" : "self"}, ${input.gameEdition}, ${quote.lines.map((l) => `${l.qty}x ${l.name}`).join(", ")})`,
           actor: { type: "USER", userId: user.id },
         });
         return o;
@@ -161,6 +169,7 @@ export function toCustomerOrder(o: OwnedOrder) {
       name: i.productSnapshot.name,
       slug: i.productSnapshot.slug,
       type: i.productSnapshot.type,
+      gameModeName: i.productSnapshot.gameModeName ?? null,
       imageUrl: i.productSnapshot.imageUrl,
       unitPricePaise: i.unitPricePaise,
       regularPricePaise: i.regularPricePaise,

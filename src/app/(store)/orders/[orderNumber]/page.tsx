@@ -18,14 +18,13 @@ export default async function OrderPage({ params }: { params: Promise<{ orderNum
   const view = toCustomerOrder(order);
   const payable = ["PENDING", "VERIFYING"].includes(order.paymentStatus) && order.fulfillmentStatus !== "CANCELLED";
   const qr = payable && cfg.qrEnabled ? await upiQrDataUrl(order.payment.upiUri) : null;
-  const item = view.items[0];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+    <div className="mx-auto max-w-[1000px] px-5 py-12">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-sm text-muted">Order</p>
-          <h1 className="font-mono text-2xl font-black text-secondary sm:text-3xl">{order.orderNumber}</h1>
+          <p className="eyebrow">Order</p>
+          <h1 className="font-mono text-2xl font-black text-primary sm:text-3xl">{order.orderNumber}</h1>
           <p className="text-sm text-muted">Placed {formatDateTime(order.createdAt)}</p>
         </div>
         <div className="flex gap-2">
@@ -34,7 +33,7 @@ export default async function OrderPage({ params }: { params: Promise<{ orderNum
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+      <div className="gateway grid lg:grid-cols-[1fr_340px]">
         <PaymentPanel
           orderNumber={order.orderNumber}
           amountPaise={order.payment.amountPaise}
@@ -52,30 +51,33 @@ export default async function OrderPage({ params }: { params: Promise<{ orderNum
           screenshots={view.screenshots.map((s) => ({ ...s, createdAt: s.createdAt.toISOString() }))}
         />
 
-        <aside className="h-fit space-y-4 rounded-xl border border-border bg-surface p-5" aria-label="Order details">
-          <h2 className="font-semibold">Order details</h2>
-          {item && (
-            <div className="flex gap-3">
-              <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-elevated">
-                {item.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.imageUrl} alt="" className="h-full w-full object-contain p-1" />
-                ) : (
-                  <span className="text-[10px] text-muted">{item.type}</span>
-                )}
-              </div>
-              <div>
-                <p className="font-semibold">{item.name}</p>
-                <p className="text-xs text-muted">{item.type}</p>
-              </div>
-            </div>
-          )}
+        <aside className="gateway-side space-y-4 border-t p-6 sm:p-8 lg:border-l lg:border-t-0" aria-label="Order details">
+          <h2 className="text-sm font-extrabold uppercase text-slate-700">Order details</h2>
+          <ul className="space-y-3">
+            {view.items.map((item, i) => (
+              <li key={i} className="flex gap-3">
+                <div className="grid size-12 shrink-0 place-items-center overflow-hidden rounded-lg bg-elevated">
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.imageUrl} alt="" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <span className="text-[10px] text-muted">{item.type}</span>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{item.name}</p>
+                  <p className="text-xs text-muted">{[item.gameModeName, `Qty ${item.quantity}`].filter(Boolean).join(" · ")}</p>
+                </div>
+                <p className="text-sm font-bold">{formatINR(item.unitPricePaise * item.quantity)}</p>
+              </li>
+            ))}
+          </ul>
           <dl className="space-y-2 border-t border-border pt-4 text-sm">
             <Row k="Purchase type" v={order.purchaseType === "GIFT" ? "Gift" : "For myself"} />
             <Row k="Minecraft username" v={order.minecraftUsername} />
             <Row k="Game edition" v={order.gameEdition === "JAVA" ? "Java" : "Bedrock"} />
             {order.giftNote && <Row k="Gift message" v={order.giftNote} />}
-            <Row k="Price" v={formatINR(order.subtotalPaise)} />
+            <Row k="Subtotal" v={formatINR(order.subtotalPaise)} />
             <Row k="Discount" v={order.discountPaise ? `- ${formatINR(order.discountPaise)}` : formatINR(0)} />
             <div className="flex justify-between border-t border-border pt-3 text-base font-bold">
               <dt>Total</dt>

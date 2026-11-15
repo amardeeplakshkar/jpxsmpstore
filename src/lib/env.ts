@@ -1,3 +1,7 @@
+try {
+  process.loadEnvFile?.();
+} catch { }
+
 import { z } from "zod";
 
 const hexKey = z
@@ -19,7 +23,6 @@ const envSchema = z.object({
   IMAP_PORT: z.coerce.number().int().positive().optional().default(993),
   IMAP_USERNAME: z.string().optional().default(""),
   IMAP_PASSWORD: z.string().optional().default(""),
-  IMAP_TRUSTED_SENDERS: z.string().optional().default("noreply@slice.bank.in"),
   UPI_ID: z.string().optional().default(""),
   UPI_PAYEE_NAME: z.string().optional().default("JPXMC"),
   STORAGE_DRIVER: z.enum(["local", "cloudinary"]).default("local"),
@@ -37,9 +40,6 @@ let cached: Env | null = null;
 /** Validates environment variables once and caches them. Throws with a readable list of problems. */
 export function getEnv(): Env {
   if (cached) return cached;
-  try {
-    process.loadEnvFile?.();
-  } catch {}
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
     const problems = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");

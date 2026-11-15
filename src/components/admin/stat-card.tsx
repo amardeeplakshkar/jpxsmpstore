@@ -3,10 +3,10 @@ import { cn } from "lib/utils";
 
 export function StatCard({ label, value, icon: Icon, tone = "primary", hint }: { label: string; value: string; icon: LucideIcon; tone?: "primary" | "secondary" | "accent" | "success" | "warning"; hint?: string }) {
   const tones = {
-    primary: "text-violet-300 bg-primary/15",
-    secondary: "text-cyan-300 bg-secondary/10",
+    primary: "text-purple-300 bg-primary/15",
+    secondary: "text-purple-200 bg-secondary/10",
     accent: "text-amber-300 bg-accent/10",
-    success: "text-green-300 bg-success/10",
+    success: "text-emerald-300 bg-success/10",
     warning: "text-amber-300 bg-warning/10",
   };
   return (

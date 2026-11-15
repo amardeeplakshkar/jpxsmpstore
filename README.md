@@ -68,3 +68,11 @@ Imports are root-based with no `@`/`~` aliases: `tsconfig.json` sets `baseUrl: "
 - S3 storage driver (Cloudinary and a private local volume are implemented behind `lib/storage`).
 
 See `docs/` for the database schema, API reference, deployment, admin setup and payment worker setup.
+
+
+## Game modes, discounts, cart and footer buttons
+
+- **Game modes** (Admin > Game modes): each mode (seeded: Survival, PvP) has its own store at `/<slug>` with tabs `/<slug>/ranks`, `/crates`, `/coins`, `/items`. A mode controls which product types it sells (PvP has no crates by default). Pick a product's mode on the product form. Products without a mode still appear on `/ranks`, `/crates`, `/coins`, `/shop`.
+- **Store-wide discount** (Admin > Storefront > Discount): percentage, sale name, optional end time (India time). Each product has an "Apply store-wide discount" switch to opt out. Discounts never stack: the customer gets the lower of the store discount and the product's own sale price. Cards and product pages show the % off, the original price and the amount saved.
+- **Cart**: add several items (ranks max 1, other items max 10 each, up to 20 lines), pay once. The cart cookie stores only slugs and quantities; prices are always recalculated on the server (`lib/pricing.ts`, `lib/orders/quote.ts`). "Buy now" still works for single items. One Minecraft username and edition apply to the whole order.
+- **Footer buttons** (Admin > Storefront > Footer buttons): square 3D buttons with a preset brand icon (Discord, YouTube, Kick, Instagram, X, Twitch, TikTok, Telegram, WhatsApp, Facebook, GitHub, Reddit, Website, Email, Store) or a pasted custom SVG, plus background colour, icon colour, link, order and visibility. Only SVG path data is stored, so pasted markup cannot run scripts.

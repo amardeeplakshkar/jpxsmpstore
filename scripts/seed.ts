@@ -1,9 +1,9 @@
 try {
   process.loadEnvFile?.();
-} catch {}
+} catch { }
 
 import { db, pool } from "db/client";
-import { categories } from "db/schema";
+import { categories, gameModes } from "db/schema";
 import { getSetting, saveSetting } from "lib/settings";
 
 /**
@@ -11,17 +11,8 @@ import { getSetting, saveSetting } from "lib/settings";
  * It deliberately creates NO products or prices: add the real JPXMC catalog in the admin panel.
  */
 async function main() {
-  for (const key of ["branding", "homepage", "server", "community", "legal", "payment", "imap"] as const) {
+  for (const key of ["branding", "homepage", "server", "community", "legal", "payment", "imap", "discount", "social"] as const) {
     const value = await getSetting(key);
-    if (key === "imap") {
-      const imapVal = value as { trustedSenders?: string[] };
-      if (!Array.isArray(imapVal.trustedSenders)) {
-        imapVal.trustedSenders = [];
-      }
-      if (!imapVal.trustedSenders.includes("noreply@slice.bank.in")) {
-        imapVal.trustedSenders.push("noreply@slice.bank.in");
-      }
-    }
     await saveSetting(key, value as never, null);
     console.log(`settings: ${key}`);
   }
@@ -34,6 +25,14 @@ async function main() {
     ])
     .onConflictDoNothing();
   console.log("categories: starter categories ensured");
+  await db
+    .insert(gameModes)
+    .values([
+      { name: "Survival", slug: "survival", description: "Ranks, crate keys and coins for the Survival server.", accentColor: "#10b981", allowedTypes: ["RANK", "CRATE", "COINS", "CUSTOM"], sortOrder: 0 },
+      { name: "PvP", slug: "pvp", description: "Ranks and perks for the PvP server.", accentColor: "#ef4444", allowedTypes: ["RANK", "COINS", "CUSTOM"], sortOrder: 10 },
+    ])
+    .onConflictDoNothing();
+  console.log("game modes: Survival and PvP ensured (edit them in Admin > Game modes)");
   await pool.end();
 }
 

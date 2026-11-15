@@ -9,8 +9,8 @@ export function ServerStatusWidget({ status, javaAddress, bedrockAddress, bedroc
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-semibold uppercase tracking-wide text-muted">Server status</span>
         {status.state === "online" ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-400">
-            <span className="size-2 animate-pulse rounded-full bg-green-400" /> Online
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+            <span className="size-2 animate-pulse rounded-full bg-emerald-400" /> Online
           </span>
         ) : status.state === "offline" ? (
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-400">

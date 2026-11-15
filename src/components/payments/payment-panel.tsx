@@ -87,7 +87,7 @@ export function PaymentPanel(props: {
   const expired = status === "EXPIRED" || (status === "PENDING" && countdown.ms === 0);
 
   return (
-    <section className="space-y-6" aria-labelledby="pay-heading">
+    <section className="space-y-6 p-6 sm:p-10" aria-labelledby="pay-heading">
       {props.evidenceRequestNote && (
         <Notice icon={<TriangleAlert />} tone="warning" title="Our team needs more information" body={props.evidenceRequestNote} />
       )}
@@ -107,9 +107,9 @@ export function PaymentPanel(props: {
       ) : (
         status !== "MATCHED" &&
         props.qrDataUrl && (
-          <div className="rounded-2xl border border-primary/40 bg-gradient-to-br from-primary/15 via-surface to-surface p-6">
+          <div className="rounded-2xl border-2 border-dashed border-[#cbd5e1] bg-surface p-6">
             <div className="flex flex-col gap-6 md:flex-row">
-              <div className="mx-auto shrink-0 rounded-xl bg-white p-3 shadow-glow md:mx-0">
+              <div className="mx-auto shrink-0 rounded-xl bg-white p-3 shadow-[0_10px_25px_rgb(0_0_0/0.1)] md:mx-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={props.qrDataUrl} alt={`UPI QR code to pay ${formatINR(props.amountPaise)} for order ${props.orderNumber}`} className="size-56" />
               </div>
@@ -117,7 +117,7 @@ export function PaymentPanel(props: {
                 <h2 id="pay-heading" className="text-xl font-bold">Scan and pay with any UPI app</h2>
                 <div>
                   <p className="text-xs uppercase text-muted">Amount</p>
-                  <p className="text-3xl font-black text-accent">{formatINR(props.amountPaise)}</p>
+                  <p className="text-[42px] font-black leading-none tracking-tight text-foreground">{formatINR(props.amountPaise)}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="rounded-lg bg-elevated px-3 py-2">
@@ -204,7 +204,7 @@ function ScreenshotUpload({ orderNumber, maxMb, screenshots }: { orderNumber: st
       <p className="mb-4 text-sm text-muted">If your payment isn&apos;t detected automatically within a few minutes, upload a screenshot of the successful UPI payment.</p>
       <form onSubmit={submit} className="space-y-4">
         <Field label="Payment screenshot" htmlFor="shot" hint={`PNG, JPG or WebP up to ${maxMb} MB`} error={error}>
-          <Input id="shot" type="file" accept="image/png,image/jpeg,image/webp" className="py-2 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1 file:text-white" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          <Input id="shot" type="file" accept="image/png,image/jpeg,image/webp" className="py-2 file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1 file:text-white file:font-bold" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
         </Field>
         <Field label="UPI transaction ID / UTR (optional)" htmlFor="utr" hint="Usually a 12-digit number shown in your UPI app.">
           <Input id="utr" value={utr} onChange={(e) => setUtr(e.target.value)} maxLength={35} inputMode="text" autoComplete="off" />
@@ -221,7 +221,7 @@ function ScreenshotUpload({ orderNumber, maxMb, screenshots }: { orderNumber: st
                 Screenshot · {formatDateTime(s.createdAt)}
               </a>
               <span className="flex items-center gap-2">
-                {s.rejectionReason && <span className="text-xs text-rose-300">{s.rejectionReason}</span>}
+                {s.rejectionReason && <span className="text-xs font-semibold text-red-600">{s.rejectionReason}</span>}
                 <StatusBadge status={s.status} />
               </span>
             </li>
@@ -234,10 +234,10 @@ function ScreenshotUpload({ orderNumber, maxMb, screenshots }: { orderNumber: st
 
 function Notice({ icon, title, body, tone }: { icon: React.ReactNode; title: string; body: string; tone: "success" | "danger" | "warning" | "info" }) {
   const tones = {
-    success: "border-success/40 bg-success/10 text-green-300",
-    danger: "border-danger/40 bg-danger/10 text-rose-300",
-    warning: "border-warning/40 bg-warning/10 text-amber-300",
-    info: "border-secondary/40 bg-secondary/10 text-cyan-300",
+    success: "border-success/40 bg-success/10 text-emerald-800",
+    danger: "border-danger/40 bg-danger/10 text-red-700",
+    warning: "border-warning/40 bg-warning/10 text-amber-800",
+    info: "border-primary/40 bg-primary/10 text-purple-800",
   };
   return (
     <div role="status" className={`flex gap-3 rounded-xl border p-4 ${tones[tone]}`}>

@@ -6,19 +6,10 @@ import { ArrowLeft, ArrowRight, Gift, Lock, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "components/ui/button";
 import { Field, Input, Textarea } from "components/ui/input";
+import { useCart } from "components/cart/cart-provider";
 import { api } from "lib/client-api";
-import { cn, effectivePricePaise, formatINR } from "lib/utils";
-
-type Product = {
-  slug: string;
-  name: string;
-  type: string;
-  imageUrl: string | null;
-  regularPricePaise: number;
-  salePricePaise: number | null;
-  javaAvailable: boolean;
-  bedrockAvailable: boolean;
-};
+import type { Quote } from "lib/orders/quote";
+import { cn, formatINR } from "lib/utils";
 
 const JAVA_RE = /^[A-Za-z0-9_]{3,16}$/;
 const BEDROCK_RE = /^[.*]?[A-Za-z0-9][A-Za-z0-9 _]{1,15}$/;
@@ -38,10 +29,10 @@ function SelectCard({ selected, onClick, icon, title, body }: { selected: boolea
       onClick={onClick}
       className={cn(
         "group flex w-full flex-col items-start gap-3 rounded-xl border-2 p-5 text-left transition-all cursor-pointer",
-        selected ? "border-primary bg-primary/15 shadow-glow" : "border-border bg-surface hover:border-primary/50 hover:-translate-y-0.5",
+        selected ? "border-primary bg-primary/10 shadow-[0_5px_15px_rgb(168_85_247/0.15)]" : "border-border bg-surface hover:border-primary/50 hover:-translate-y-0.5",
       )}
     >
-      <span className={cn("grid size-11 place-items-center rounded-lg", selected ? "bg-primary text-white" : "bg-elevated text-violet-300")}>{icon}</span>
+      <span className={cn("grid size-11 place-items-center rounded-lg", selected ? "bg-primary text-white" : "bg-elevated text-primary")}>{icon}</span>
       <span>
         <span className="block text-lg font-bold">{title}</span>
         <span className="block text-sm text-muted">{body}</span>
@@ -50,31 +41,35 @@ function SelectCard({ selected, onClick, icon, title, body }: { selected: boolea
   );
 }
 
-export function CheckoutFlow({ product, buyerName }: { product: Product; buyerName: string }) {
+/**
+ * Checkout for a whole cart (source="cart") or a single "Buy now" product (source="single").
+ * Prices shown come from a server quote; the server re-prices everything when the order is created.
+ */
+export function CheckoutFlow({ quote, buyerName, source }: { quote: Quote; buyerName: string; source: "cart" | "single" }) {
   const router = useRouter();
-  const storageKey = `jpx-checkout-${product.slug}`;
+  const cart = useCart();
+  const storageKey = `jpx-checkout-${source === "cart" ? "cart" : quote.lines[0]?.slug}`;
   const [purchaseType, setPurchaseType] = React.useState<"SELF" | "GIFT" | null>(null);
-  const [edition, setEdition] = React.useState<"JAVA" | "BEDROCK">(product.javaAvailable ? "JAVA" : "BEDROCK");
+  const [edition, setEdition] = React.useState<"JAVA" | "BEDROCK">(quote.javaAvailable ? "JAVA" : "BEDROCK");
   const [username, setUsername] = React.useState("");
   const [giftNote, setGiftNote] = React.useState("");
   const [step, setStep] = React.useState<1 | 2 | 3>(1);
   const [error, setError] = React.useState<string | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [idemKey, setIdemKey] = React.useState<string>("");
+  const itemsKey = JSON.stringify(quote.lines.map((l) => [l.slug, l.qty]));
 
-  // Keep one idempotency key per checkout attempt so double-clicks and retries return the same order.
+  // One idempotency key per checkout attempt (and per cart contents) so double-clicks return the same order.
   React.useEffect(() => {
-    const existing = sessionStorage.getItem(storageKey);
-    if (existing) setIdemKey(existing);
+    const stored = sessionStorage.getItem(storageKey);
+    const parsed = stored ? (JSON.parse(stored) as { k: string; items: string }) : null;
+    if (parsed && parsed.items === itemsKey) setIdemKey(parsed.k);
     else {
       const k = newKey();
-      sessionStorage.setItem(storageKey, k);
+      sessionStorage.setItem(storageKey, JSON.stringify({ k, items: itemsKey }));
       setIdemKey(k);
     }
-  }, [storageKey]);
-
-  const unit = effectivePricePaise(product);
-  const discount = product.regularPricePaise - unit;
+  }, [storageKey, itemsKey]);
 
   function validateUsername(): boolean {
     const re = edition === "JAVA" ? JAVA_RE : BEDROCK_RE;
@@ -92,7 +87,7 @@ export function CheckoutFlow({ product, buyerName }: { product: Product; buyerNa
       const res = await api<{ orderNumber: string }>("/api/orders", {
         method: "POST",
         json: {
-          productSlug: product.slug,
+          items: quote.lines.map((l) => ({ slug: l.slug, qty: l.qty })),
           purchaseType,
           gameEdition: edition,
           minecraftUsername: username.trim(),
@@ -101,6 +96,7 @@ export function CheckoutFlow({ product, buyerName }: { product: Product; buyerNa
         },
       });
       sessionStorage.removeItem(storageKey);
+      if (source === "cart") cart.clear();
       router.push(`/orders/${res.orderNumber}`);
     } catch (err) {
       toast.error((err as Error).message);
@@ -109,12 +105,12 @@ export function CheckoutFlow({ product, buyerName }: { product: Product; buyerNa
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
-      <div className="space-y-6">
+    <div className="grid lg:grid-cols-[1fr_380px]">
+      <div className="space-y-6 p-6 sm:p-10">
         <ol className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide" aria-label="Checkout progress">
           {["Recipient", "Player details", "Review"].map((label, i) => (
-            <li key={label} className={cn("flex items-center gap-2", step >= i + 1 ? "text-secondary" : "text-muted")}>
-              <span className={cn("grid size-6 place-items-center rounded-md", step >= i + 1 ? "bg-secondary text-background" : "bg-elevated")}>{i + 1}</span>
+            <li key={label} className={cn("flex items-center gap-2", step >= i + 1 ? "text-primary" : "text-muted")}>
+              <span className={cn("grid size-6 place-items-center rounded-md", step >= i + 1 ? "bg-primary text-white" : "bg-elevated")}>{i + 1}</span>
               <span className="hidden sm:inline">{label}</span>
               {i < 2 && <span className="mx-1 h-px w-6 bg-border" />}
             </li>
@@ -126,7 +122,7 @@ export function CheckoutFlow({ product, buyerName }: { product: Product; buyerNa
             <h2 id="who" className="text-xl font-bold">Who is this for?</h2>
             <div role="radiogroup" className="grid gap-4 sm:grid-cols-2">
               <SelectCard selected={purchaseType === "SELF"} onClick={() => setPurchaseType("SELF")} icon={<User />} title="Buy for myself" body={`Deliver to your own Minecraft account, ${buyerName}.`} />
-              <SelectCard selected={purchaseType === "GIFT"} onClick={() => setPurchaseType("GIFT")} icon={<Gift />} title="Gift to someone" body="Send it to a friend's Minecraft account." />
+              <SelectCard selected={purchaseType === "GIFT"} onClick={() => setPurchaseType("GIFT")} icon={<Gift />} title="Gift to someone" body="Send everything to a friend's Minecraft account." />
             </div>
             <div className="flex justify-end">
               <Button disabled={!purchaseType} onClick={() => setStep(2)}>
@@ -143,7 +139,7 @@ export function CheckoutFlow({ product, buyerName }: { product: Product; buyerNa
               <p className="mb-2 text-sm font-medium">Game edition</p>
               <div role="radiogroup" className="grid grid-cols-2 gap-3">
                 {(["JAVA", "BEDROCK"] as const).map((ed) => {
-                  const available = ed === "JAVA" ? product.javaAvailable : product.bedrockAvailable;
+                  const available = ed === "JAVA" ? quote.javaAvailable : quote.bedrockAvailable;
                   return (
                     <button
                       key={ed}
@@ -157,17 +153,19 @@ export function CheckoutFlow({ product, buyerName }: { product: Product; buyerNa
                       }}
                       className={cn(
                         "rounded-xl border-2 px-4 py-3 text-left transition-all disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer",
-                        edition === ed ? (ed === "JAVA" ? "border-secondary bg-secondary/10" : "border-primary bg-primary/15") : "border-border bg-surface hover:border-primary/50",
+                        edition === ed ? "border-primary bg-primary/10" : "border-border bg-surface hover:border-primary/50",
                       )}
                     >
                       <span className="block font-bold">{ed === "JAVA" ? "Java Edition" : "Bedrock Edition"}</span>
-                      <span className="block text-xs text-muted">{available ? (ed === "JAVA" ? "PC / Mac / Linux" : "Mobile, console, Windows") : "Not available for this product"}</span>
+                      <span className="block text-xs text-muted">
+                        {available ? (ed === "JAVA" ? "PC / Mac / Linux" : "Mobile, console, Windows") : quote.lines.length > 1 ? "Not available for every item in your cart" : "Not available for this product"}
+                      </span>
                     </button>
                   );
                 })}
               </div>
             </div>
-            <Field label={purchaseType === "GIFT" ? "Recipient's Minecraft username" : "Your Minecraft username"} htmlFor="mc-username" error={error} hint="Double-check the spelling. Items are delivered to this exact username.">
+            <Field label={purchaseType === "GIFT" ? "Recipient's Minecraft username" : "Your Minecraft username"} htmlFor="mc-username" error={error} hint="Double-check the spelling. Everything in this order is delivered to this exact username.">
               <Input id="mc-username" value={username} onChange={(e) => setUsername(e.target.value)} maxLength={17} autoComplete="off" aria-invalid={Boolean(error)} placeholder={edition === "JAVA" ? "Steve_123" : "Alex Gamer"} />
             </Field>
             {purchaseType === "GIFT" && (
@@ -203,53 +201,59 @@ export function CheckoutFlow({ product, buyerName }: { product: Product; buyerNa
               ))}
             </dl>
             <p className="flex items-center gap-2 text-xs text-muted">
-              <Lock className="size-3.5" /> The final amount is calculated on our server when your order is created.
+              <Lock className="size-3.5" /> The final amount is recalculated on our server when your order is created.
             </p>
             <div className="flex justify-between">
               <Button variant="ghost" onClick={() => setStep(2)}>
                 <ArrowLeft /> Back
               </Button>
-              <Button variant="gold" size="lg" loading={submitting} disabled={!idemKey} onClick={placeOrder}>
-                Place order and pay {formatINR(unit)}
+              <Button size="lg" loading={submitting} disabled={!idemKey} onClick={placeOrder}>
+                Place order and pay {formatINR(quote.totalPaise)}
               </Button>
             </div>
           </section>
         )}
       </div>
 
-      <aside className="h-fit rounded-xl border border-border bg-surface p-5 lg:sticky lg:top-24" aria-label="Order summary">
-        <h2 className="mb-4 font-semibold">Order summary</h2>
-        <div className="flex gap-3">
-          <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-lg bg-elevated bg-blocks">
-            {product.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.imageUrl} alt="" className="h-full w-full object-contain p-1" />
-            ) : (
-              <span className="text-xs text-muted">{product.type}</span>
-            )}
-          </div>
-          <div>
-            <p className="font-semibold">{product.name}</p>
-            <p className="text-xs text-muted">
-              {purchaseType ? (purchaseType === "GIFT" ? "Gift" : "For myself") : "Recipient not chosen"} · {edition === "JAVA" ? "Java" : "Bedrock"}
-            </p>
-            {username && <p className="text-xs text-muted">Player: {username}</p>}
-          </div>
-        </div>
+      <aside className="gateway-side h-fit border-t p-6 sm:p-8 lg:border-l lg:border-t-0" aria-label="Order summary">
+        <h2 className="mb-4 text-sm font-extrabold uppercase text-slate-700">Order summary ({quote.lines.reduce((a, l) => a + l.qty, 0)} item{quote.lines.reduce((a, l) => a + l.qty, 0) === 1 ? "" : "s"})</h2>
+        <ul className="space-y-3">
+          {quote.lines.map((l) => (
+            <li key={l.slug} className="flex gap-3">
+              <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-elevated">
+                {l.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={l.imageUrl} alt="" className="h-full w-full object-contain p-1" />
+                ) : (
+                  <span className="text-[10px] text-muted">{l.type}</span>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{l.name}</p>
+                <p className="text-xs text-muted">{[l.gameModeName, `Qty ${l.qty}`].filter(Boolean).join(" · ")}</p>
+              </div>
+              <div className="text-right text-sm">
+                <p className="font-bold">{formatINR(l.lineTotalPaise)}</p>
+                {l.lineRegularPaise > l.lineTotalPaise && <p className="text-xs text-muted line-through">{formatINR(l.lineRegularPaise)}</p>}
+              </div>
+            </li>
+          ))}
+        </ul>
         <dl className="mt-5 space-y-2 border-t border-border pt-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-muted">Price</dt>
-            <dd>{formatINR(product.regularPricePaise)}</dd>
+            <dt className="text-muted">Subtotal</dt>
+            <dd>{formatINR(quote.subtotalPaise)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-muted">Discount</dt>
-            <dd className={discount > 0 ? "text-success" : ""}>{discount > 0 ? `- ${formatINR(discount)}` : formatINR(0)}</dd>
+            <dt className="text-muted">Discount{quote.discount ? ` (${quote.discount.label})` : ""}</dt>
+            <dd className={quote.discountPaise > 0 ? "font-semibold text-emerald-700" : ""}>{quote.discountPaise > 0 ? `- ${formatINR(quote.discountPaise)}` : formatINR(0)}</dd>
           </div>
           <div className="flex justify-between border-t border-border pt-3 text-base font-bold">
             <dt>Total payable</dt>
-            <dd className="text-accent">{formatINR(unit)}</dd>
+            <dd className="text-accent">{formatINR(quote.totalPaise)}</dd>
           </div>
         </dl>
+        {purchaseType && <p className="mt-4 text-xs text-muted">{purchaseType === "GIFT" ? "Gift" : "For myself"} · {edition === "JAVA" ? "Java" : "Bedrock"}{username ? ` · ${username}` : ""}</p>}
       </aside>
     </div>
   );

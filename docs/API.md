@@ -55,3 +55,12 @@ Writes require a same-origin `Origin` header (CSRF protection) and are validated
 | GET | `/api/admin/audit-logs?action&entity&page` | audit.view |
 
 Role matrix lives in `src/lib/permissions/index.ts`.
+
+
+## Added endpoints
+| Method | Path | Notes |
+| --- | --- | --- |
+| POST | `/api/cart/quote` | `{ items: [{ slug, qty }] }` returns priced lines, subtotal, discount, total, unavailable items and which editions every item supports |
+| POST | `/api/orders` | now accepts `items: [{ slug, qty }]` (1-20 lines); `productSlug` still works for single-item orders |
+| GET, POST | `/api/admin/game-modes`; PATCH, DELETE `/[id]` | categories.manage. Changing a mode's types is blocked while it still has products of a removed type |
+| PUT | `/api/admin/settings` | new sections `discount` and `social` |

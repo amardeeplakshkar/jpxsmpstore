@@ -32,6 +32,8 @@ export type ProductFormInitial = {
   name: string;
   slug: string;
   categoryId: string | null;
+  gameModeId: string | null;
+  discountEligible: boolean;
   shortDescription: string;
   description: string;
   imageUrl: string | null;
@@ -73,13 +75,17 @@ function buildMetadata(type: ProductType, m: Meta) {
   }
 }
 
-export function ProductForm({ initial, categories }: { initial?: ProductFormInitial; categories: { id: string; name: string }[] }) {
+export type GameModeOption = { id: string; name: string; allowedTypes: string[] };
+
+export function ProductForm({ initial, categories, gameModes = [] }: { initial?: ProductFormInitial; categories: { id: string; name: string }[]; gameModes?: GameModeOption[] }) {
   const router = useRouter();
   const [type, setType] = React.useState<ProductType>(initial?.type ?? "RANK");
   const [name, setName] = React.useState(initial?.name ?? "");
   const [slug, setSlug] = React.useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = React.useState(Boolean(initial));
   const [categoryId, setCategoryId] = React.useState(initial?.categoryId ?? "");
+  const [gameModeId, setGameModeId] = React.useState(initial?.gameModeId ?? "");
+  const [discountEligible, setDiscountEligible] = React.useState(initial?.discountEligible ?? true);
   const [shortDescription, setShort] = React.useState(initial?.shortDescription ?? "");
   const [description, setDescription] = React.useState(initial?.description ?? "");
   const [imageUrl, setImageUrl] = React.useState(initial?.imageUrl ?? "");
@@ -108,6 +114,8 @@ export function ProductForm({ initial, categories }: { initial?: ProductFormInit
         name,
         slug,
         categoryId: categoryId || null,
+        gameModeId: gameModeId || null,
+        discountEligible,
         shortDescription,
         description,
         imageUrl: imageUrl || null,
@@ -157,6 +165,17 @@ export function ProductForm({ initial, categories }: { initial?: ProductFormInit
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </NativeSelect>
             </Field>
+            <Field label="Game mode" htmlFor="game-mode" hint="Which server store page this appears on">
+              <NativeSelect id="game-mode" value={gameModeId} onChange={(e) => setGameModeId(e.target.value)}>
+                <option value="">No game mode (general pages only)</option>
+                {gameModes.map((m) => (
+                  <option key={m.id} value={m.id} disabled={!m.allowedTypes.includes(type)}>
+                    {m.name}{!m.allowedTypes.includes(type) ? " (does not sell this type)" : ""}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+            <div className="hidden sm:block" />
             <Field label="Name" htmlFor="name">
               <Input id="name" required value={name} onChange={(e) => { setName(e.target.value); if (!slugTouched) setSlug(slugify(e.target.value)); }} />
             </Field>
@@ -250,6 +269,7 @@ export function ProductForm({ initial, categories }: { initial?: ProductFormInit
           <CardContent className="space-y-4">
             <Field label="Regular price (₹)" htmlFor="price"><Input id="price" required inputMode="decimal" placeholder="199.00" value={price} onChange={(e) => setPrice(e.target.value)} /></Field>
             <Field label="Sale price (₹)" htmlFor="sale" hint="Optional. Must be lower than the regular price."><Input id="sale" inputMode="decimal" value={sale} onChange={(e) => setSale(e.target.value)} /></Field>
+            <SwitchField id="discount-eligible" label="Apply store-wide discount" description="Turn off to exclude this item from the discount set under Storefront > Discount. Its own sale price still applies." checked={discountEligible} onCheckedChange={setDiscountEligible} />
           </CardContent>
         </Card>
         <Card>

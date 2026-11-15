@@ -7,6 +7,7 @@ import {
   ClipboardList,
   CreditCard,
   FolderTree,
+  Swords,
   Image as ImageIcon,
   LayoutDashboard,
   Menu,
@@ -23,6 +24,7 @@ import { cn } from "lib/utils";
 const NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/game-modes", label: "Game modes", icon: Swords },
   { href: "/admin/categories", label: "Categories", icon: FolderTree },
   { href: "/admin/orders", label: "Orders", icon: ClipboardList },
   { href: "/admin/payments", label: "Payments", icon: CreditCard },

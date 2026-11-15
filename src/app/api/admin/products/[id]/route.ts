@@ -5,7 +5,7 @@ import { products } from "db/schema";
 import { fail, ok, parseJson, route } from "lib/api";
 import { audit } from "lib/audit";
 import { requireAdminApi } from "lib/auth/guards";
-import { assertSlugFree, getProductForEdit, productValues, replaceGallery } from "lib/admin/products";
+import { assertModeAllowsType, assertSlugFree, getProductForEdit, productValues, replaceGallery } from "lib/admin/products";
 import { productInputSchema } from "lib/validation/product";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -24,6 +24,7 @@ export const PUT = route<Ctx>(async (req, { params }) => {
   if (!before) return fail(404, "NOT_FOUND", "Product not found.");
   const input = await parseJson(req, productInputSchema);
   await assertSlugFree(input.slug, id);
+  await assertModeAllowsType(input.gameModeId, input.type);
   const product = await db.transaction(async (tx) => {
     const [p] = await tx.update(products).set(productValues(input)).where(eq(products.id, id)).returning();
     await replaceGallery(tx, id, input.gallery);

@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { and, count, eq, sum } from "drizzle-orm";
+import { LogOut, Receipt, User } from "lucide-react";
 import { db } from "db/client";
 import { orders } from "db/schema";
-import { Badge } from "components/ui/badge";
-import { Button } from "components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "components/ui/card";
 import { requireUserPage } from "lib/auth/guards";
 import { discordAvatarUrl, formatDate, formatDateTime, formatINR } from "lib/utils";
 
-export const metadata = { title: "Account" };
+export const metadata = { title: "Profile" };
 
 export default async function AccountPage() {
   const user = await requireUserPage("/account");
@@ -16,57 +14,61 @@ export default async function AccountPage() {
     db.select({ n: count(), spent: sum(orders.totalPaise) }).from(orders).where(and(eq(orders.userId, user.id), eq(orders.paymentStatus, "PAID"))),
     db.select({ n: count() }).from(orders).where(and(eq(orders.userId, user.id), eq(orders.purchaseType, "GIFT"), eq(orders.paymentStatus, "PAID"))),
   ]);
+  const name = user.globalName ?? user.username;
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <h1 className="mb-8 text-3xl font-black">Your account</h1>
-      <Card>
-        <CardContent className="flex flex-col items-start gap-5 pt-5 sm:flex-row sm:items-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={discordAvatarUrl(user.discordId, user.avatar, 128)} alt="" className="size-20 rounded-xl border border-border" />
-          <div className="flex-1">
-            <p className="text-xl font-bold">{user.globalName ?? user.username}</p>
-            <p className="text-sm text-muted">@{user.username}</p>
-            <p className="mt-1 font-mono text-xs text-muted">Discord ID: {user.discordId}</p>
-            <div className="mt-2 flex gap-2">
-              <Badge variant={user.status === "ACTIVE" ? "success" : "danger"}>{user.status}</Badge>
-              {user.adminRole && <Badge variant="gold">{user.adminRole.replace("_", " ")}</Badge>}
-            </div>
-          </div>
+    <div className="mx-auto grid max-w-[1000px] items-start gap-8 px-5 py-12 md:grid-cols-[280px_1fr]">
+      <aside className="rounded-[20px] border border-[#1e2430] bg-[#11151d] px-6 py-10 text-center shadow-[0_20px_40px_rgb(0_0_0/0.4)] md:sticky md:top-[110px]">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={discordAvatarUrl(user.discordId, user.avatar, 128)} alt="" className="mx-auto mb-5 size-[120px] rounded-2xl border-2 border-primary bg-black object-cover shadow-[0_0_20px_rgb(168_85_247/0.3)]" />
+        <h1 className="mb-3 text-[22px] font-black uppercase tracking-wide text-white">{name}</h1>
+        <span className={`mb-10 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-black uppercase text-white ${user.status === "ACTIVE" ? "bg-primary text-black" : "bg-red-500"}`}>
+          {user.adminRole ? user.adminRole.replace("_", " ") : user.status === "ACTIVE" ? "Member" : "Blocked"}
+        </span>
+        <nav className="flex flex-col gap-2 text-left" aria-label="Profile">
+          <Link href="/account" aria-current="page" className="flex items-center gap-3 rounded-[10px] border border-primary/20 bg-primary/5 px-5 py-3.5 text-sm font-extrabold text-primary">
+            <User className="size-4" /> Overview
+          </Link>
+          <Link href="/orders" className="flex items-center gap-3 rounded-[10px] border border-transparent px-5 py-3.5 text-sm font-extrabold text-muted transition hover:bg-white/5 hover:text-white">
+            <Receipt className="size-4" /> Order history
+          </Link>
           <form action="/api/auth/logout" method="post">
-            <Button variant="outline" type="submit">
-              Log out
-            </Button>
+            <button type="submit" className="flex w-full items-center gap-3 rounded-[10px] border border-transparent px-5 py-3.5 text-sm font-extrabold text-red-300 transition hover:bg-red-500/10 cursor-pointer">
+              <LogOut className="size-4" /> Log out
+            </button>
           </form>
-        </CardContent>
-      </Card>
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <Stat label="Paid orders" value={String(totals?.n ?? 0)} />
-        <Stat label="Total spent" value={formatINR(Number(totals?.spent ?? 0))} />
-        <Stat label="Gifts sent" value={String(gifts?.n ?? 0)} />
-      </div>
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle>Account details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm">
-          <p className="flex justify-between"><span className="text-muted">Member since</span> {formatDate(user.createdAt)}</p>
-          <p className="flex justify-between"><span className="text-muted">Last login</span> {formatDateTime(user.lastLoginAt)}</p>
-          <div className="pt-3">
-            <Button asChild variant="secondary">
-              <Link href="/orders">View order history</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        </nav>
+      </aside>
+      <section className="min-h-[550px] rounded-[20px] border border-[#1e2430] bg-[#11151d] p-7 shadow-[0_20px_40px_rgb(0_0_0/0.4)] sm:p-11">
+        <h2 className="mb-2 text-[28px] font-black text-white">Overview</h2>
+        <p className="mb-9 font-semibold text-slate-500">Your purchases and account details.</p>
+        <div className="grid gap-5 sm:grid-cols-3">
+          <Stat label="Paid orders" value={String(totals?.n ?? 0)} color="#a855f7" />
+          <Stat label="Total spent" value={formatINR(Number(totals?.spent ?? 0))} color="#10b981" />
+          <Stat label="Gifts sent" value={String(gifts?.n ?? 0)} color="#f59e0b" />
+        </div>
+        <dl className="mt-8 space-y-3">
+          {[
+            ["Discord", `@${user.username}`],
+            ["Discord ID", user.discordId],
+            ["Member since", formatDate(user.createdAt)],
+            ["Last login", formatDateTime(user.lastLoginAt)],
+          ].map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-4 rounded-xl bg-sunken px-6 py-4 text-sm shadow-[0_5px_15px_rgb(0_0_0/0.2)]">
+              <dt className="font-bold text-slate-500">{k}</dt>
+              <dd className="text-right font-extrabold text-white">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <p className="text-xs uppercase text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-black">{value}</p>
+    <div className="stat-box flex flex-col gap-1 p-6" style={{ ["--st" as string]: color }}>
+      <h3 className="text-[11px] font-black uppercase tracking-wider text-muted">{label}</h3>
+      <p className="text-[28px] font-black text-white">{value}</p>
     </div>
   );
 }

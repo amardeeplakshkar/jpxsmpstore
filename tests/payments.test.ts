@@ -12,7 +12,7 @@ import { productInputSchema } from "lib/validation/product";
 import { hasPermission } from "lib/permissions";
 import * as F from "./fixtures/emails";
 
-const TRUSTED = ["@hdfcbank.net", "@icicibank.com", "@phonepe.com", "noreply@slice.bank.in"];
+const TRUSTED = ["@hdfcbank.net", "@icicibank.com", "@phonepe.com"];
 
 const order = (over: Partial<CandidateOrder> = {}): CandidateOrder => ({
   id: "o1",
@@ -112,14 +112,6 @@ describe("email parsing", () => {
     assert.equal(p.transactionRef, "431855556666");
     assert.equal(p.referencedOrderNumber, null);
   });
-  it("parses a Slice credit alert with order reference", () => {
-    const p = parsePaymentEmail(F.sliceCreditWithOrder)!;
-    assert.equal(p.parser, "slice");
-    assert.equal(p.amountPaise, 19900);
-    assert.equal(p.transactionRef, "431812345678");
-    assert.equal(p.referencedOrderNumber, "JPX-20261114-A8K92");
-    assert.equal(p.payerHandle, "steve@okaxis");
-  });
   it("ignores debit alerts", () => {
     assert.equal(parsePaymentEmail(F.debitAlert), null);
   });
@@ -134,7 +126,6 @@ describe("email parsing", () => {
 describe("sender trust", () => {
   it("accepts trusted domains and rejects others", () => {
     assert.equal(isTrustedSender(F.hdfcCreditWithOrder, TRUSTED).trusted, true);
-    assert.equal(isTrustedSender(F.sliceCreditWithOrder, TRUSTED).trusted, true);
     assert.equal(isTrustedSender(F.untrustedSender, TRUSTED).trusted, false);
   });
   it("rejects spoofed mail that failed DKIM/DMARC", () => {

@@ -1,7 +1,3 @@
-try {
-  process.loadEnvFile?.();
-} catch {}
-
 import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({

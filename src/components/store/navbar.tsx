@@ -2,17 +2,23 @@ import Link from "next/link";
 import { Brand } from "components/store/brand";
 import { UserMenu } from "components/store/user-menu";
 import { MobileNav } from "components/store/mobile-nav";
+import { IpCopy } from "components/store/ip-copy";
+import { DiscordIcon } from "components/store/discord-icon";
+import { NavLinks } from "components/store/nav-links";
+import { CartButton } from "components/cart/cart-button";
 import type { SessionUser } from "lib/auth/session";
 import { discordAvatarUrl } from "lib/utils";
 
 export const STORE_LINKS = [
+  { href: "/", label: "Home" },
   { href: "/ranks", label: "Ranks" },
   { href: "/crates", label: "Crates" },
   { href: "/coins", label: "Coins" },
   { href: "/shop", label: "More" },
 ];
 
-export function Navbar({ storeName, logoUrl, user }: { storeName: string; logoUrl: string; user: SessionUser | null }) {
+export function Navbar({ storeName, logoUrl, serverIp, discordUrl, user, modes = [] }: { storeName: string; logoUrl: string; serverIp: string; discordUrl: string; user: SessionUser | null; modes?: { name: string; slug: string }[] }) {
+  const links = modes.length ? [{ href: "/", label: "Home" }, ...modes.map((m) => ({ href: `/${m.slug}`, label: m.name })), { href: "/orders", label: "Orders" }] : STORE_LINKS;
   const menuUser = user
     ? {
         name: user.globalName ?? user.username,
@@ -21,21 +27,22 @@ export function Navbar({ storeName, logoUrl, user }: { storeName: string; logoUr
       }
     : null;
   return (
-    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-lg">
-      <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="Main">
-        <Brand name={storeName} logoUrl={logoUrl} />
-        <ul className="hidden items-center gap-1 md:flex">
-          {STORE_LINKS.map((l) => (
-            <li key={l.href}>
-              <Link href={l.href} className="rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-foreground">
-                {l.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-        <div className="flex items-center gap-2">
+    <header className="sticky top-0 z-40 border-b border-border bg-[rgb(7_9_14/0.9)] shadow-[0_10px_30px_rgb(0_0_0/0.8)] backdrop-blur-[25px]">
+      <nav className="mx-auto flex h-[76px] max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10" aria-label="Main">
+        <div className="flex items-center gap-5">
+          <Brand name={storeName} logoUrl={logoUrl} />
+          <IpCopy address={serverIp} className="hidden xl:inline-flex" />
+        </div>
+        <NavLinks links={links} />
+        <div className="flex items-center gap-3">
+          {discordUrl && (
+            <Link href={discordUrl} target="_blank" rel="noopener noreferrer" className="btn3d btn3d-discord hidden h-11 px-5 text-[13px] sm:inline-flex">
+              <DiscordIcon /> <span className="hidden lg:inline">Discord</span>
+            </Link>
+          )}
+          <CartButton />
           <UserMenu user={menuUser} />
-          <MobileNav links={STORE_LINKS} />
+          <MobileNav links={links} />
         </div>
       </nav>
     </header>

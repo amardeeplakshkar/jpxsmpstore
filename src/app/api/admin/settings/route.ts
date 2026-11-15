@@ -5,7 +5,7 @@ import { requireAdminApi } from "lib/auth/guards";
 import { encryptSecret } from "lib/crypto";
 import { hasPermission } from "lib/permissions";
 import { getPublicImap, getSetting, getStorefrontSettings, saveSetting } from "lib/settings";
-import { brandingSchema, communitySchema, homepageSchema, imapPublicSchema, legalSchema, paymentSchema, serverSchema } from "lib/settings/schemas";
+import { brandingSchema, communitySchema, discountSchema, socialSchema, homepageSchema, imapPublicSchema, legalSchema, paymentSchema, serverSchema } from "lib/settings/schemas";
 
 /** Returns settings. IMAP password is never returned, only whether it is set. */
 export const GET = route(async () => {
@@ -25,6 +25,8 @@ const updateSchema = z.discriminatedUnion("section", [
   z.object({ section: z.literal("server"), value: serverSchema }),
   z.object({ section: z.literal("community"), value: communitySchema }),
   z.object({ section: z.literal("legal"), value: legalSchema }),
+  z.object({ section: z.literal("discount"), value: discountSchema }),
+  z.object({ section: z.literal("social"), value: socialSchema }),
   z.object({ section: z.literal("payment"), value: paymentSchema }),
   z.object({ section: z.literal("imap"), value: imapPublicSchema.extend({ password: z.string().max(500).optional(), clearPassword: z.boolean().optional() }) }),
 ]);

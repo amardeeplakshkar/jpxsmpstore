@@ -55,6 +55,8 @@ const productBase = z.object({
     .max(140)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers and hyphens"),
   categoryId: z.string().uuid().nullable().default(null),
+  gameModeId: z.string().uuid().nullable().default(null),
+  discountEligible: z.boolean().default(true),
   shortDescription: z.string().max(300).default(""),
   description: z.string().max(20000).default(""),
   imageUrl: z.string().max(1000).nullable().default(null),

@@ -28,17 +28,33 @@ export function fail(status: number, code: string, message: string, details?: un
   );
 }
 
-/** CSRF defence for cookie-authenticated writes: the Origin (or Referer) must match the app URL. */
+/** CSRF defence for cookie-authenticated writes: the Origin (or Referer) must match the app URL or the request host. */
 export function assertSameOrigin(req: NextRequest | Request) {
   const method = req.method.toUpperCase();
   if (method === "GET" || method === "HEAD" || method === "OPTIONS") return;
-  const expected = new URL(appUrl()).origin;
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
   const source = origin ?? (referer ? new URL(referer).origin : null);
-  if (source !== expected) {
+  if (!source) {
     throw new ApiError(403, "CSRF_FAILED", "Cross-site request blocked.");
   }
+
+  // 1. Check against configured NEXT_PUBLIC_APP_URL
+  try {
+    const expected = new URL(appUrl()).origin;
+    if (source === expected) return;
+  } catch {}
+
+  // 2. Check against the request's own host (handles Vercel domains, preview deployments, custom domains, localhost)
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  if (host) {
+    try {
+      const sourceHost = new URL(source).host;
+      if (sourceHost === host) return;
+    } catch {}
+  }
+
+  throw new ApiError(403, "CSRF_FAILED", "Cross-site request blocked.");
 }
 
 export async function parseJson<T>(req: Request, schema: ZodType<T>): Promise<T> {

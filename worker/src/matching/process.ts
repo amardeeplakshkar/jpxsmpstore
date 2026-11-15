@@ -57,15 +57,7 @@ export async function processPaymentEmail(email: NormalizedEmail): Promise<Proce
   if (seen) return { outcome: "skipped", reason: "already processed" };
 
   const [imap, paymentCfg] = await Promise.all([getSetting("imap"), getSetting("payment")]);
-  const trustedList = Array.from(
-    new Set([
-      ...imap.trustedSenders,
-      ...(process.env.IMAP_TRUSTED_SENDERS
-        ? process.env.IMAP_TRUSTED_SENDERS.split(",").map((s) => s.trim()).filter(Boolean)
-        : ["noreply@slice.bank.in"]),
-    ])
-  );
-  const trust = isTrustedSender(email, trustedList);
+  const trust = isTrustedSender(email, imap.trustedSenders);
   if (!trust.trusted) {
     await recordEmail(email, null, "UNTRUSTED", { reason: trust.reason });
     return { outcome: "recorded", status: "UNTRUSTED", reason: trust.reason };

@@ -75,12 +75,43 @@ export const imapPublicSchema = z.object({
   username: z.string().max(200).default(""),
   mailbox: z.string().max(120).default("INBOX"),
   pollingIntervalSeconds: z.coerce.number().int().min(15).max(3600).default(60),
-  trustedSenders: z.array(z.string().max(200)).max(50).default(["noreply@slice.bank.in"]),
+  trustedSenders: z.array(z.string().max(200)).max(50).default([]),
 });
 
 /** Stored form includes the encrypted password. Never returned by any API. */
 export const imapStoredSchema = imapPublicSchema.extend({
   passwordEncrypted: z.string().default(""),
+});
+
+/** Store-wide percentage discount. Products can opt out individually (products.discount_eligible). */
+export const discountSchema = z.object({
+  enabled: z.boolean().default(false),
+  percent: z.coerce.number().int().min(1).max(90).default(10),
+  label: z.string().max(60).default("Store-wide sale"),
+  /** Optional end time as "YYYY-MM-DDTHH:mm" in India time. Empty = no end. */
+  endsAt: z.union([z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/), z.literal("")]).default(""),
+});
+
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex colour like #5865F2");
+/** SVG path data only: commands, numbers, separators. Never raw SVG markup, so nothing executable can be stored. */
+const svgPath = z.string().min(1).max(8000).regex(/^[MmLlHhVvCcSsQqTtAaZz0-9.,\s+\-eE]+$/, "Invalid SVG path data");
+
+export const socialButtonSchema = z.object({
+  id: z.string().max(40),
+  label: z.string().trim().min(1).max(40),
+  url: z.string().trim().url().max(500),
+  icon: z.string().max(40).default("website"),
+  customViewBox: z.string().regex(/^[\d.\s-]+$/).max(60).default("0 0 24 24"),
+  customPaths: z.array(svgPath).max(20).default([]),
+  bgColor: hexColor.default("#5865F2"),
+  iconColor: hexColor.default("#FFFFFF"),
+  enabled: z.boolean().default(true),
+});
+export type SocialButton = z.infer<typeof socialButtonSchema>;
+
+export const socialSchema = z.object({
+  title: z.string().max(40).default("Community"),
+  buttons: z.array(socialButtonSchema).max(12).default([]),
 });
 
 export const SETTINGS = {
@@ -91,6 +122,8 @@ export const SETTINGS = {
   legal: legalSchema,
   payment: paymentSchema,
   imap: imapStoredSchema,
+  discount: discountSchema,
+  social: socialSchema,
 } as const;
 
 export type SettingsKey = keyof typeof SETTINGS;

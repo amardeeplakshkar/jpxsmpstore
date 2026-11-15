@@ -5,8 +5,8 @@ export function Price({ regularPricePaise, salePricePaise, className }: { regula
   const onSale = price < regularPricePaise;
   return (
     <div className={cn("flex items-baseline gap-2", className)}>
-      <span className="text-xl font-extrabold text-accent">{formatINR(price)}</span>
-      {onSale && <span className="text-sm text-muted line-through">{formatINR(regularPricePaise)}</span>}
+      <span className="text-xl font-black text-foreground">{formatINR(price)}</span>
+      {onSale && <span className="text-sm font-bold text-muted line-through">{formatINR(regularPricePaise)}</span>}
     </div>
   );
 }

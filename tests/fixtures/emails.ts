@@ -29,12 +29,6 @@ export const genericCreditNoOrder = base({
   text: "You have received ₹349.00 from Alex via UPI. UPI Ref No: 431855556666. Date: 14/11/2026 10:31 AM",
 });
 
-export const sliceCreditWithOrder = base({
-  from: "noreply@slice.bank.in",
-  subject: "Money credited to your account",
-  text: "Rs.199.00 has been credited to your slice account via UPI. UPI Ref: 431812345678. Remarks: JPX-20261114-A8K92. Sender VPA: steve@okaxis on 14-11-26 10:30 AM.",
-});
-
 export const debitAlert = base({
   text: "Rs.500.00 has been debited from your account **1234 to VPA shop@okaxis on 14-11-26. UPI Ref 431800001111.",
   subject: "Debit alert",

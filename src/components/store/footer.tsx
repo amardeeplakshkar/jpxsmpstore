@@ -1,49 +1,60 @@
 import Link from "next/link";
 import { Brand } from "components/store/brand";
 import { DiscordIcon } from "components/store/discord-icon";
+import { SocialButtons } from "components/store/social-buttons";
 import type { StorefrontSettings } from "lib/settings";
 
+const linkCls = "text-sm font-semibold text-muted transition hover:pl-1 hover:text-primary";
+
 export function Footer({ settings }: { settings: StorefrontSettings }) {
-  const { branding, community, legal } = settings;
+  const { branding, community, legal, social } = settings;
+  const hasSocial = social.buttons.some((b) => b.enabled);
   const termsHref = legal.termsUrl || "/terms";
   const privacyHref = legal.privacyUrl || "/privacy";
   return (
-    <footer className="mt-24 border-t border-border bg-surface/40">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-3">
-        <div className="space-y-3">
+    <footer className="mt-24 border-t border-border bg-[rgb(7_9_14/0.95)] backdrop-blur-xl">
+      <div className="mx-auto grid max-w-[1200px] gap-10 px-5 py-14 text-center md:grid-cols-[2fr_1fr_1fr] md:text-left">
+        <div className="flex flex-col items-center gap-4 md:items-start">
           <Brand name={branding.storeName} logoUrl={branding.logoUrl} />
-          <p className="max-w-sm text-sm text-muted">{branding.tagline}</p>
-          {community.discordInviteUrl && (
-            <a href={community.discordInviteUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm font-medium text-secondary hover:underline">
-              <DiscordIcon /> Join our Discord
-            </a>
+          <p className="max-w-sm text-sm font-medium leading-relaxed text-muted">{branding.tagline}</p>
+          {hasSocial ? (
+            <div className="mt-2 space-y-4">
+              <h2 className="text-base font-black uppercase tracking-wide text-white">{social.title}</h2>
+              <SocialButtons buttons={social.buttons} />
+            </div>
+          ) : (
+            community.discordInviteUrl && (
+              <a href={community.discordInviteUrl} target="_blank" rel="noopener noreferrer" className="btn3d btn3d-discord h-11 px-5 text-[13px]">
+                <DiscordIcon /> Join Discord
+              </a>
+            )
           )}
         </div>
         <div>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Store</h2>
-          <ul className="space-y-2 text-sm">
-            <li><Link href="/ranks" className="hover:text-secondary">Ranks</Link></li>
-            <li><Link href="/crates" className="hover:text-secondary">Crates</Link></li>
-            <li><Link href="/coins" className="hover:text-secondary">Coins</Link></li>
-            <li><Link href="/orders" className="hover:text-secondary">Order history</Link></li>
+          <h2 className="mb-4 text-base font-black uppercase tracking-wide text-white">Store</h2>
+          <ul className="space-y-3">
+            <li><Link href="/ranks" className={linkCls}>Ranks</Link></li>
+            <li><Link href="/crates" className={linkCls}>Crates</Link></li>
+            <li><Link href="/coins" className={linkCls}>Coins</Link></li>
+            <li><Link href="/orders" className={linkCls}>Order history</Link></li>
           </ul>
         </div>
         <div>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Legal</h2>
-          <ul className="space-y-2 text-sm">
-            <li><a href={termsHref} className="hover:text-secondary">Terms and conditions</a></li>
-            <li><a href={privacyHref} className="hover:text-secondary">Privacy policy</a></li>
+          <h2 className="mb-4 text-base font-black uppercase tracking-wide text-white">Legal</h2>
+          <ul className="space-y-3">
+            <li><a href={termsHref} className={linkCls}>Terms and conditions</a></li>
+            <li><a href={privacyHref} className={linkCls}>Privacy policy</a></li>
             {community.footerLinks.map((l) => (
               <li key={l.url + l.label}>
-                <a href={l.url} className="hover:text-secondary" rel="noopener noreferrer">{l.label}</a>
+                <a href={l.url} className={linkCls} rel="noopener noreferrer">{l.label}</a>
               </li>
             ))}
           </ul>
         </div>
       </div>
-      <div className="border-t border-border px-4 py-5 text-center text-xs text-muted">
+      <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-3 border-t border-border px-5 py-6 text-xs font-semibold text-muted md:flex-row">
         <p>{community.footerText}</p>
-        <p className="mt-1">© {new Date().getFullYear()} {branding.storeName}. All prices in INR.</p>
+        <p>© {new Date().getFullYear()} {branding.storeName}. All prices in INR.</p>
       </div>
     </footer>
   );

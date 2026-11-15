@@ -2,16 +2,19 @@ import { notFound } from "next/navigation";
 import { CheckoutFlow } from "components/checkout/checkout-flow";
 import { EmptyState } from "components/ui/empty-state";
 import { requireUserPage } from "lib/auth/guards";
-import { getProductBySlug } from "lib/products/queries";
+import { publicQuote, quoteCart } from "lib/orders/quote";
 import { getSetting } from "lib/settings";
 
 export const metadata = { title: "Checkout" };
 
-export default async function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
+/** "Buy now" checkout for a single product. Does not touch the cart. */
+export default async function BuyNowPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const user = await requireUserPage(`/checkout/${slug}`);
-  const [product, payment] = await Promise.all([getProductBySlug(slug), getSetting("payment")]);
-  if (!product) notFound();
+  if (!/^[a-z0-9-]{1,140}$/.test(slug)) notFound();
+  const [quote, payment] = await Promise.all([quoteCart([{ slug, qty: 1 }]), getSetting("payment")]);
+  if (quote.lines.length === 0) notFound();
+
   if (user.status === "BLOCKED") {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16">
@@ -26,22 +29,14 @@ export default async function CheckoutPage({ params }: { params: Promise<{ slug:
       </div>
     );
   }
+
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
-      <h1 className="mb-8 text-3xl font-black">Checkout</h1>
-      <CheckoutFlow
-        product={{
-          slug: product.slug,
-          name: product.name,
-          type: product.type,
-          imageUrl: product.imageUrl,
-          regularPricePaise: product.regularPricePaise,
-          salePricePaise: product.salePricePaise,
-          javaAvailable: product.javaAvailable,
-          bedrockAvailable: product.bedrockAvailable,
-        }}
-        buyerName={user.globalName ?? user.username}
-      />
+    <div className="mx-auto max-w-[1040px] px-5 py-12">
+      <h1 className="mb-2 text-4xl font-black tracking-tight">Checkout</h1>
+      <p className="mb-8 font-semibold text-muted">Secure UPI checkout. Your order is verified before delivery.</p>
+      <div className="gateway">
+        <CheckoutFlow quote={publicQuote(quote)} buyerName={user.globalName ?? user.username} source="single" />
+      </div>
     </div>
   );
 }

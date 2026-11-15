@@ -1,88 +1,203 @@
 @import "tailwindcss";
 
+/* JpxSMP design system: dark glass panels, purple accent, chunky 3D buttons, Inter. */
 @theme {
-  --color-background: #09090f;
-  --color-surface: #11111b;
-  --color-elevated: #191927;
-  --color-primary: #8b5cf6;
-  --color-primary-foreground: #ffffff;
-  --color-secondary: #22d3ee;
-  --color-secondary-foreground: #09090f;
-  --color-accent: #fbbf24;
-  --color-accent-foreground: #09090f;
+  --color-background: #07090e;
+  --color-surface: #0f141d;
+  --color-elevated: #131924;
+  --color-sunken: #0b0f15;
+  --color-primary: #a855f7;
+  --color-primary-dark: #9333ea;
+  --color-primary-foreground: #000000;
+  --color-secondary: #c084fc;
+  --color-secondary-foreground: #000000;
+  --color-accent: #a855f7;
+  --color-accent-foreground: #000000;
   --color-foreground: #f8fafc;
-  --color-muted: #9494a8;
-  --color-border: #29293b;
-  --color-danger: #f43f5e;
-  --color-success: #22c55e;
+  --color-muted: #94a3b8;
+  --color-border: rgb(255 255 255 / 0.08);
+  --color-danger: #ef4444;
+  --color-success: #10b981;
   --color-warning: #f59e0b;
+  --color-discord: #5865f2;
+  --color-discord-dark: #3b45a6;
   --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-display: "Minecraftia", "Press Start 2P", ui-sans-serif, system-ui, sans-serif;
-  --shadow-glow: 0 0 0 1px rgb(139 92 246 / 0.35), 0 8px 30px -6px rgb(139 92 246 / 0.45);
-  --shadow-glow-cyan: 0 0 0 1px rgb(34 211 238 / 0.35), 0 8px 30px -6px rgb(34 211 238 / 0.35);
-  --shadow-glow-gold: 0 0 0 1px rgb(251 191 36 / 0.4), 0 8px 30px -6px rgb(251 191 36 / 0.35);
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 1.75rem;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --shadow-glow: 0 0 25px rgb(168 85 247 / 0.3);
+  --shadow-glow-cyan: 0 0 25px rgb(168 85 247 / 0.3);
+  --shadow-glow-gold: 0 0 25px rgb(168 85 247 / 0.3);
+  --shadow-panel: 0 15px 35px rgb(0 0 0 / 0.45);
+  --animate-fade-in: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulseDot {
+  0% { box-shadow: 0 0 0 0 rgb(168 85 247 / 0.7); }
+  70% { box-shadow: 0 0 0 10px rgb(168 85 247 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(168 85 247 / 0); }
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-  html {
-    color-scheme: dark;
-  }
+  * { border-color: var(--color-border); }
+  html { color-scheme: dark; scroll-behavior: smooth; }
   body {
-    background: var(--color-background);
+    background-color: var(--color-background);
+    background-image:
+      radial-gradient(circle at top, rgb(168 85 247 / 0.08) 0%, transparent 45%),
+      radial-gradient(circle at 85% 30%, rgb(88 101 242 / 0.05) 0%, transparent 35%);
+    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
-  ::selection {
-    background: rgb(139 92 246 / 0.4);
-  }
-  :focus-visible {
-    outline: 2px solid var(--color-secondary);
-    outline-offset: 2px;
-  }
+  ::selection { background: rgb(168 85 247 / 0.4); }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 0.15); border-radius: 10px; }
 }
 
 @layer components {
-  /* Subtle Minecraft block grid used behind hero sections */
-  .bg-blocks {
-    background-image:
-      linear-gradient(rgb(139 92 246 / 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(139 92 246 / 0.06) 1px, transparent 1px);
-    background-size: 32px 32px;
+  /* ---- 3D buttons ---- */
+  .btn3d {
+    position: relative; top: 0;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    border-radius: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --b-face: var(--color-primary); --b-edge: var(--color-primary-dark); --b-glow: rgb(168 85 247 / 0.3);
+    background: var(--b-face);
+    box-shadow: 0 6px 0 var(--b-edge), 0 15px 25px var(--b-glow);
   }
-  .text-gradient {
-    background: linear-gradient(90deg, #a78bfa, #22d3ee);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  .btn3d:hover { top: -2px; box-shadow: 0 8px 0 var(--b-edge), 0 20px 30px var(--b-glow); }
+  .btn3d:active { top: 6px; box-shadow: 0 0 0 var(--b-edge), 0 5px 10px var(--b-glow); }
+  .btn3d-accent { color: #000; }
+  .btn3d-dark {
+    --b-face: #1e293b; --b-edge: #0f172a; --b-glow: rgb(0 0 0 / 0.4);
+    color: #fff; border: 1px solid rgb(255 255 255 / 0.1);
   }
-  .pixel-border {
-    box-shadow:
-      inset -3px -3px 0 0 rgb(0 0 0 / 0.35),
-      inset 3px 3px 0 0 rgb(255 255 255 / 0.08);
+  .btn3d-dark:hover { background: #2a384f; }
+  .btn3d-discord { --b-face: var(--color-discord); --b-edge: var(--color-discord-dark); --b-glow: rgb(88 101 242 / 0.3); color: #fff; }
+  .btn3d-danger { --b-face: #ef4444; --b-edge: #991b1b; --b-glow: rgb(239 68 68 / 0.3); color: #fff; }
+  .btn-outline-accent {
+    border: 2px solid var(--color-primary); color: var(--color-primary); background: transparent;
+    border-radius: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;
   }
-  .prose-store p {
-    margin-bottom: 0.9rem;
-    line-height: 1.7;
-    color: #c9c9d6;
+  .btn-outline-accent:hover { background: rgb(168 85 247 / 0.1); box-shadow: var(--shadow-glow); }
+
+  /* ---- Panels ---- */
+  .panel {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: 24px; box-shadow: var(--shadow-panel);
   }
-  .prose-store h2 {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 1.5rem 0 0.5rem;
+  .glass {
+    background: linear-gradient(135deg, rgb(20 26 35 / 0.8) 0%, rgb(11 15 25 / 0.9) 100%);
+    backdrop-filter: blur(25px); border: 1px solid var(--color-border);
+    border-radius: 28px; box-shadow: 0 25px 60px rgb(0 0 0 / 0.6);
   }
+  .lift { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  .lift:hover { transform: translateY(-10px); border-color: rgb(255 255 255 / 0.15); box-shadow: 0 25px 50px rgb(0 0 0 / 0.6); }
+
+  .text-glow { color: var(--color-primary); text-shadow: var(--shadow-glow); }
+  .icon-glow { color: var(--color-primary); filter: drop-shadow(0 0 10px rgb(168 85 247 / 0.5)); }
+
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 999px;
+    background: rgb(0 0 0 / 0.4); border: 1px solid rgb(255 255 255 / 0.05);
+    font-size: 13px; font-weight: 800; box-shadow: inset 0 0 10px rgb(0 0 0 / 0.5);
+  }
+  .status-dot { width: 10px; height: 10px; border-radius: 999px; background: var(--dot, #a855f7); box-shadow: 0 0 10px var(--dot, #a855f7); animation: pulseDot 1.5s infinite; }
+
+  .ip-widget {
+    position: relative; top: 0; display: inline-flex; align-items: center; gap: 10px;
+    padding: 10px 22px; border-radius: 999px; font-size: 14px; font-weight: 800; color: #fff;
+    background: rgb(168 85 247 / 0.1); border: 1px solid rgb(168 85 247 / 0.3);
+    box-shadow: 0 4px 0 rgb(168 85 247 / 0.2); transition: 0.3s; cursor: pointer;
+  }
+  .ip-widget:hover { top: -2px; background: rgb(168 85 247 / 0.2); box-shadow: 0 6px 0 rgb(168 85 247 / 0.3), var(--shadow-glow); }
+  .ip-widget:active { top: 4px; box-shadow: none; }
+  .ip-widget[data-copied="true"] { background: var(--color-primary); color: #000; border-color: var(--color-primary); box-shadow: 0 0 20px var(--color-primary); }
+
+  .nav-link {
+    color: var(--color-muted); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s;
+  }
+  .nav-link:hover, .nav-link[aria-current="page"] { color: #fff; text-shadow: 0 0 15px rgb(255 255 255 / 0.4); }
+
+  /* ---- Store cards ---- */
+  .category-card {
+    background: var(--color-sunken); border: 1px solid rgb(255 255 255 / 0.05); border-radius: 20px;
+    padding: 56px 30px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+    box-shadow: 0 10px 30px rgb(0 0 0 / 0.3); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .category-card:hover {
+    border-color: rgb(168 85 247 / 0.4); transform: translateY(-10px); background: #131924;
+    box-shadow: 0 20px 40px rgb(0 0 0 / 0.6), inset 0 0 30px rgb(168 85 247 / 0.05);
+  }
+  .package-card {
+    --card: #a855f7; --card-glow: rgb(168 85 247 / 0.25);
+    position: relative; overflow: hidden; display: flex; flex-direction: column;
+    background: var(--color-surface); border: 1px solid rgb(255 255 255 / 0.05); border-radius: 24px;
+    padding: 35px 25px; box-shadow: 0 15px 35px rgb(0 0 0 / 0.5);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .package-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 5px; background: var(--card); box-shadow: 0 0 25px var(--card);
+  }
+  .package-card:hover { transform: translateY(-10px) scale(1.02); border-color: var(--card); box-shadow: 0 30px 60px rgb(0 0 0 / 0.8), 0 0 40px var(--card-glow); z-index: 10; }
+  .tab-pill {
+    display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 12px;
+    background: #111827; color: #f8fafc; font-weight: 900; font-size: 13px; text-transform: uppercase;
+    border: 1px solid rgb(255 255 255 / 0.05); box-shadow: 0 5px 15px rgb(0 0 0 / 0.4); transition: 0.2s;
+  }
+  .tab-pill:hover:not([data-active="true"]) { background: #1f2937; transform: translateY(-2px); }
+  .tab-pill[data-active="true"] { background: var(--color-primary); color: #000; border-color: var(--color-primary); box-shadow: 0 5px 20px rgb(168 85 247 / 0.3); }
+
+  /* ---- Product page ---- */
+  .pp-hero { position: relative; overflow: hidden; border-bottom: 1px solid rgb(255 255 255 / 0.05); }
+  .pp-hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(135deg, color-mix(in srgb, var(--card) 22%, transparent) 0%, transparent 100%); }
+  .pp-hero::after { content: ""; position: absolute; inset: 0 0 auto 0; height: 6px; background: var(--card); box-shadow: 0 0 30px var(--card); }
+  .feature-card { background: #131924; border: 1px solid rgb(255 255 255 / 0.05); border-radius: 16px; padding: 18px 20px; transition: 0.3s; }
+  .feature-card:hover { border-color: color-mix(in srgb, var(--card) 35%, transparent); background: color-mix(in srgb, var(--card) 6%, #131924); transform: translateY(-3px); }
+  .buy-box { background: var(--color-sunken); border: 1px solid var(--color-border); border-radius: 24px; box-shadow: 0 20px 40px rgb(0 0 0 / 0.6); }
+
+  /* ---- Light payment gateway (checkout + payment page) ---- */
+  .gateway {
+    --color-background: #ffffff;
+    --color-surface: #f8fafc;
+    --color-elevated: #f1f5f9;
+    --color-sunken: #f1f5f9;
+    --color-foreground: #0f172a;
+    --color-muted: #64748b;
+    --color-border: #e2e8f0;
+    --color-secondary: #9333ea;
+    --color-accent: #9333ea;
+    color-scheme: light;
+    color: var(--color-foreground);
+    background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 60px rgb(0 0 0 / 0.8);
+  }
+  .gateway input, .gateway textarea, .gateway select { background: #fff; border-width: 2px; border-color: #cbd5e1; color: #0f172a; font-weight: 700; }
+  .gateway input:focus, .gateway textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 4px rgb(168 85 247 / 0.1); }
+  .gateway-side { background: #f8fafc; border-color: #e2e8f0; }
+
+  .stat-box { background: var(--color-sunken); border-radius: 12px; border-left: 3px solid var(--st, #a855f7); box-shadow: 0 5px 15px rgb(0 0 0 / 0.2); }
+
+  .eyebrow { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-muted); }
+
+  .prose-store p { margin-bottom: 0.9rem; line-height: 1.7; color: #cbd5e1; font-weight: 500; }
+  .prose-store h2 { font-size: 1.25rem; font-weight: 900; margin: 1.5rem 0 0.5rem; color: #fff; }
+  .gateway .prose-store p { color: #475569; }
+
+  /* legacy helpers kept so older markup still renders on-theme */
+  .bg-blocks { background-image: radial-gradient(circle at 30% 20%, rgb(168 85 247 / 0.12), transparent 60%); }
+  .text-gradient { color: var(--color-primary); text-shadow: var(--shadow-glow); }
+  .pixel-border { box-shadow: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
 }

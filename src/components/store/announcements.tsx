@@ -2,7 +2,7 @@ import { Info, Megaphone, Sparkles, TriangleAlert } from "lucide-react";
 import type { Announcement } from "db/schema";
 
 const ICONS = { INFO: Info, SALE: Sparkles, UPDATE: Megaphone, WARNING: TriangleAlert } as const;
-const COLORS = { INFO: "text-secondary", SALE: "text-accent", UPDATE: "text-violet-300", WARNING: "text-rose-300" } as const;
+const COLORS = { INFO: "text-secondary", SALE: "text-accent", UPDATE: "text-purple-300", WARNING: "text-rose-300" } as const;
 
 export function Announcements({ items }: { items: Announcement[] }) {
   if (items.length === 0) return null;

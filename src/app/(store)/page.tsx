@@ -1,85 +1,143 @@
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, Boxes, Coins, Crown, GitBranch, Gift, ShieldCheck, Swords, Users } from "lucide-react";
 import { Announcements } from "components/store/announcements";
 import { DiscordIcon } from "components/store/discord-icon";
+import { IpCopy } from "components/store/ip-copy";
 import { RichText } from "components/store/rich-text";
 import { SectionHeading } from "components/store/section-heading";
-import { ServerStatusWidget } from "components/store/server-status";
 import { ProductGrid } from "components/products/product-card";
-import { Button } from "components/ui/button";
 import { EmptyState } from "components/ui/empty-state";
-import { listActiveAnnouncements, listProducts } from "lib/products/queries";
+import { getStoreDiscount, listActiveAnnouncements, listGameModes, listProducts, toCardData } from "lib/products/queries";
+import { DiscountBanner } from "components/store/discount-banner";
 import { getServerStatus } from "lib/server-status";
 import { getStorefrontSettings } from "lib/settings";
 
+const CATEGORIES = [
+  { href: "/ranks", title: "Ranks", body: "Perks, kits and a shiny prefix", icon: Crown },
+  { href: "/crates", title: "Crates", body: "Keys for rare rewards", icon: Gift },
+  { href: "/coins", title: "Coins", body: "In-game currency packs", icon: Coins },
+];
+
 export default async function HomePage() {
-  const [settings, featuredRanks, featuredCrates, featured, announcements, status] = await Promise.all([
+  const [settings, featuredRanks, featuredCrates, featured, announcements, status, modes, discount] = await Promise.all([
     getStorefrontSettings(),
     listProducts({ type: "RANK", featured: true, limit: 6 }),
     listProducts({ type: "CRATE", featured: true, limit: 6 }),
     listProducts({ featured: true, limit: 6 }),
     listActiveAnnouncements(),
     getServerStatus(),
+    listGameModes(),
+    getStoreDiscount(),
   ]);
+  const card = (list: typeof featured) => list.map((p) => toCardData(p, discount));
   const { homepage, server, community, branding } = settings;
   const featuredOther = featured.filter((p) => p.type !== "RANK" && p.type !== "CRATE");
   const nothingFeatured = featuredRanks.length + featuredCrates.length + featuredOther.length === 0;
 
+  const online = status.state === "online";
+  const statusText = online ? `${status.playersOnline} Players Online` : status.state === "offline" ? "Server Offline" : "Join the adventure";
+  const dot = online ? "#10b981" : status.state === "offline" ? "#ef4444" : "#a855f7";
+  const editions = [server.javaAddress && "Java", server.bedrockAddress && "Bedrock"].filter(Boolean).join(" • ") || "Java • Bedrock";
+
+  const info = [
+    { icon: Users, value: online ? String(status.playersOnline) : "—", label: "Active players" },
+    { icon: Boxes, value: editions, label: "Platforms supported" },
+    { icon: GitBranch, value: server.supportedVersions || "Latest", label: "Version" },
+    { icon: ShieldCheck, value: "Secure UPI", label: "Verified payments", accent: true },
+  ];
+
   return (
-    <div className="space-y-20 pb-8">
+    <div className="mx-auto max-w-[1200px] px-5 py-12 sm:py-16">
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-blocks" aria-hidden />
+      <section className="glass relative mb-14 flex flex-col items-center justify-between gap-10 overflow-hidden p-8 text-center sm:p-12 lg:flex-row lg:p-[60px] lg:text-left">
         {homepage.heroBannerUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={homepage.heroBannerUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />
+          <img src={homepage.heroBannerUrl} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-background/60 to-background" aria-hidden />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[1.3fr_1fr] lg:py-28">
-          <div className="space-y-6">
-            <p className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-300">
-              <Zap className="size-3.5" /> {branding.storeName}
-            </p>
-            <h1 className="text-4xl font-black leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-              <span className="text-gradient">{homepage.heroTitle}</span>
-            </h1>
-            <p className="max-w-xl text-lg text-muted">{homepage.heroDescription}</p>
-            <div className="flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link href="/ranks">
-                  Browse ranks <ArrowRight />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link href="/crates">View crates</Link>
-              </Button>
-              {community.discordInviteUrl && (
-                <Button asChild size="lg" variant="ghost">
-                  <a href={community.discordInviteUrl} target="_blank" rel="noopener noreferrer">
-                    <DiscordIcon /> Discord
-                  </a>
-                </Button>
-              )}
-            </div>
-          </div>
-          <div className="flex justify-center lg:justify-end">
-            <ServerStatusWidget status={status} javaAddress={server.javaAddress} bedrockAddress={server.bedrockAddress} bedrockPort={server.bedrockPort} />
+        <div className="relative z-10 max-w-[580px]">
+          <span className="status-pill mb-6" style={{ ["--dot" as string]: dot }}>
+            <span className="status-dot" aria-hidden />
+            {statusText}
+          </span>
+          <h1 className="mb-5 text-[40px] font-black leading-[1.1] tracking-[-1.5px] sm:text-[56px]">
+            {homepage.heroTitle || (
+              <>
+                Welcome to <br /> <span className="text-glow">{branding.storeName}</span>
+              </>
+            )}
+          </h1>
+          <p className="mb-10 text-[17px] font-semibold leading-relaxed text-muted">{homepage.heroDescription}</p>
+          <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center lg:justify-start">
+            <IpCopy address={server.javaAddress} variant="button" />
+            <Link href="/ranks" className="btn3d btn3d-accent h-14 px-7 text-sm">
+              Browse store <ArrowRight className="size-4" />
+            </Link>
           </div>
         </div>
+        {branding.logoUrl && (
+          <div className="relative z-10 hidden size-[340px] shrink-0 overflow-hidden rounded-[28px] bg-black/30 shadow-[0_20px_50px_rgb(0_0_0/0.8),inset_0_0_0_1px_rgb(255_255_255/0.05)] transition duration-500 [transform:perspective(1000px)_rotateY(-10deg)_rotateX(5deg)] hover:[transform:perspective(1000px)_translateY(-10px)] lg:block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={branding.logoUrl} alt={`${branding.storeName} logo`} className="h-full w-full object-cover" />
+          </div>
+        )}
+      </section>
+
+      {/* Info cards */}
+      <section className="mb-20 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4" aria-label="Server information">
+        {info.map(({ icon: Icon, value, label, accent }) => (
+          <div key={label} className="panel lift flex flex-col gap-3 px-6 py-8">
+            <Icon className="icon-glow size-7" aria-hidden />
+            <div>
+              <p className={`mb-1 text-[22px] font-black ${accent ? "text-primary" : "text-white"}`}>{value}</p>
+              <p className="eyebrow">{label}</p>
+            </div>
+          </div>
+        ))}
       </section>
 
       <Announcements items={announcements} />
 
+      <DiscountBanner discount={discount} className="mb-14" />
+
+      {/* Game modes (or plain categories when no modes exist yet) */}
+      <section className="mb-20">
+        <SectionHeading title={modes.length ? "Select Game Mode" : "Select a Category"} href={modes.length ? undefined : "/shop"} />
+        <div className="grid gap-7 md:grid-cols-2 lg:grid-cols-3">
+          {modes.length
+            ? modes.map((m) => (
+                <Link key={m.id} href={`/${m.slug}`} className="category-card group" style={{ ["--mode" as string]: m.accentColor }}>
+                  {m.iconUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={m.iconUrl} alt="" className="size-16 rounded-2xl object-cover transition group-hover:scale-110" />
+                  ) : (
+                    <Swords className="size-14 transition group-hover:scale-110" style={{ color: m.accentColor, filter: `drop-shadow(0 0 10px ${m.accentColor}80)` }} aria-hidden />
+                  )}
+                  <h3 className="text-[26px] font-black text-white">{m.name}</h3>
+                  <p className="font-semibold text-muted">{m.description || m.allowedTypes.map((t) => ({ RANK: "Ranks", CRATE: "Crate keys", COINS: "Coins", CUSTOM: "Items" })[t as "RANK"]).join(" & ")}</p>
+                </Link>
+              ))
+            : CATEGORIES.map(({ href, title, body, icon: Icon }) => (
+                <Link key={href} href={href} className="category-card group">
+                  <Icon className="icon-glow size-14 transition group-hover:scale-110" aria-hidden />
+                  <h3 className="text-[26px] font-black text-white">{title}</h3>
+                  <p className="font-semibold text-muted">{body}</p>
+                </Link>
+              ))}
+        </div>
+      </section>
+
       {(homepage.introBody || server.serverInfo) && (
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-2">
-          <div>
-            <h2 className="mb-4 text-2xl font-bold sm:text-3xl">{homepage.introTitle}</h2>
-            {homepage.introBody && <RichText text={homepage.introBody} />}
-          </div>
+        <section className="mb-20 grid gap-7 lg:grid-cols-2">
+          {homepage.introBody && (
+            <div className="panel p-8">
+              <h2 className="mb-4 text-2xl font-black">{homepage.introTitle}</h2>
+              <RichText text={homepage.introBody} />
+            </div>
+          )}
           {server.serverInfo && (
-            <div className="rounded-xl border border-border bg-surface p-6">
-              <h3 className="mb-3 font-semibold">Server information</h3>
-              {server.supportedVersions && <p className="mb-2 text-sm text-secondary">Versions: {server.supportedVersions}</p>}
+            <div className="panel p-8">
+              <h2 className="mb-2 text-2xl font-black">Server information</h2>
+              {server.supportedVersions && <p className="eyebrow mb-4 text-primary">Versions: {server.supportedVersions}</p>}
               <RichText text={server.serverInfo} />
             </div>
           )}
@@ -87,60 +145,54 @@ export default async function HomePage() {
       )}
 
       {featuredRanks.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading title="Featured ranks" subtitle="Stand out with exclusive perks." href="/ranks" />
-          <ProductGrid products={featuredRanks} />
+        <section className="mb-20">
+          <SectionHeading title="Featured Ranks" subtitle="Stand out with exclusive perks." href="/ranks" />
+          <ProductGrid products={card(featuredRanks)} />
         </section>
       )}
       {featuredCrates.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading title="Featured crates" subtitle="Try your luck for rare rewards." href="/crates" />
-          <ProductGrid products={featuredCrates} />
+        <section className="mb-20">
+          <SectionHeading title="Featured Crates" subtitle="Try your luck for rare rewards." href="/crates" />
+          <ProductGrid products={card(featuredCrates)} />
         </section>
       )}
       {featuredOther.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading title="Featured products" href="/shop" />
-          <ProductGrid products={featuredOther} />
+        <section className="mb-20">
+          <SectionHeading title="Featured Products" href="/shop" />
+          <ProductGrid products={card(featuredOther)} />
         </section>
       )}
       {nothingFeatured && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6">
+        <section className="mb-20">
           <EmptyState title="The store is being stocked" description="Products will appear here once the team adds them. Check back soon." />
         </section>
       )}
 
       {homepage.howToPurchase.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6">
-          <SectionHeading title="How to purchase" />
-          <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="mb-20">
+          <SectionHeading title="How to Purchase" />
+          <ol className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {homepage.howToPurchase.map((step, i) => (
-              <li key={i} className="rounded-xl border border-border bg-surface p-5">
-                <span className="mb-3 grid size-9 place-items-center rounded-lg bg-primary/20 font-bold text-violet-300">{i + 1}</span>
-                <h3 className="font-semibold">{step.title}</h3>
-                <p className="mt-1 text-sm text-muted">{step.body}</p>
+              <li key={i} className="panel lift p-6">
+                <span className="mb-4 grid size-11 place-items-center rounded-xl bg-primary text-lg font-black text-black shadow-[0_4px_0_var(--color-primary-dark)]">{i + 1}</span>
+                <h3 className="text-lg font-black">{step.title}</h3>
+                <p className="mt-1 text-sm font-medium text-muted">{step.body}</p>
               </li>
             ))}
           </ol>
-          <p className="mt-6 flex items-center gap-2 text-sm text-muted">
-            <ShieldCheck className="size-4 text-success" /> Payments are verified by our team. We never ask for your Minecraft password.
+          <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-muted">
+            <ShieldCheck className="size-4 text-primary" /> Payments are verified by our team. We never ask for your Minecraft password.
           </p>
         </section>
       )}
 
       {community.discordInviteUrl && (
-        <section className="mx-auto max-w-7xl px-4 sm:px-6">
-          <div className="flex flex-col items-center justify-between gap-6 rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/25 via-surface to-secondary/10 p-8 sm:flex-row">
-            <div>
-              <h2 className="text-2xl font-bold">Join the community</h2>
-              <p className="text-muted">Get support, event news and giveaways on our Discord server.</p>
-            </div>
-            <Button asChild size="lg">
-              <a href={community.discordInviteUrl} target="_blank" rel="noopener noreferrer">
-                <DiscordIcon /> Join Discord
-              </a>
-            </Button>
-          </div>
+        <section className="glass p-10 text-center sm:p-[60px]">
+          <h2 className="mb-4 text-3xl font-black tracking-tight sm:text-[42px]">Join the Community</h2>
+          <p className="mb-10 text-lg font-medium text-muted">Get support, event news and giveaways on our Discord server.</p>
+          <a href={community.discordInviteUrl} target="_blank" rel="noopener noreferrer" className="btn3d btn3d-discord h-14 px-8 text-sm">
+            <DiscordIcon /> Join Discord
+          </a>
         </section>
       )}
     </div>

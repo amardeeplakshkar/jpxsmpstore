@@ -32,7 +32,6 @@ export const iciciParser = senderParser("icici", ["icicibank.com"], (text, p) =>
 export const sbiParser = senderParser("sbi", ["sbi.co.in", "alerts.sbi.co.in"]);
 export const axisParser = senderParser("axis", ["axisbank.com"]);
 export const kotakParser = senderParser("kotak", ["kotak.com"]);
-export const sliceParser = senderParser("slice", ["slice.bank.in", "sliceit.com"]);
 export const paytmParser = senderParser("paytm-business", ["paytm.com", "paytmbank.com"]);
 export const phonepeParser = senderParser("phonepe-business", ["phonepe.com"]);
 export const gpayParser = senderParser("gpay-business", ["google.com"]);
@@ -57,7 +56,6 @@ export const PARSERS: PaymentEmailParser[] = [
   sbiParser,
   axisParser,
   kotakParser,
-  sliceParser,
   paytmParser,
   phonepeParser,
   gpayParser,

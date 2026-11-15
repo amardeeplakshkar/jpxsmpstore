@@ -19,7 +19,7 @@ Services: `postgres`, `redis`, `migrate` (runs migrations + seed, then exits), `
 
 ### HTTPS reverse proxy (Caddy example)
 ```
-jpxsmpstore.vercel.app {
+store.example.com {
   reverse_proxy 127.0.0.1:3000
 }
 ```

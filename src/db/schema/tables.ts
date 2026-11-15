@@ -101,12 +101,33 @@ export const categories = pgTable(
   (t) => [uniqueIndex("categories_slug_uq").on(t.slug), index("categories_sort_idx").on(t.sortOrder)],
 );
 
+/* ------------------------------------------------------------- game_modes */
+export const gameModes = pgTable(
+  "game_modes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 60 }).notNull(),
+    slug: varchar("slug", { length: 60 }).notNull(),
+    description: text("description").default("").notNull(),
+    iconUrl: text("icon_url"),
+    accentColor: varchar("accent_color", { length: 7 }).default("#a855f7").notNull(),
+    allowedTypes: jsonb("allowed_types").$type<string[]>().default(["RANK", "CRATE", "COINS", "CUSTOM"]).notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    deletedAt: ts("deleted_at"),
+  },
+  (t) => [uniqueIndex("game_modes_slug_uq").on(t.slug), index("game_modes_sort_idx").on(t.sortOrder)],
+);
+
 /* --------------------------------------------------------------- products */
 export const products = pgTable(
   "products",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
+    gameModeId: uuid("game_mode_id").references(() => gameModes.id, { onDelete: "set null" }),
     type: productType("type").notNull(),
     name: varchar("name", { length: 120 }).notNull(),
     slug: varchar("slug", { length: 140 }).notNull(),
@@ -115,6 +136,7 @@ export const products = pgTable(
     imageUrl: text("image_url"),
     regularPricePaise: integer("regular_price_paise").notNull(),
     salePricePaise: integer("sale_price_paise"),
+    discountEligible: boolean("discount_eligible").default(true).notNull(),
     javaAvailable: boolean("java_available").default(true).notNull(),
     bedrockAvailable: boolean("bedrock_available").default(true).notNull(),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),
@@ -129,6 +151,7 @@ export const products = pgTable(
     uniqueIndex("products_slug_uq").on(t.slug),
     index("products_type_idx").on(t.type),
     index("products_category_idx").on(t.categoryId),
+    index("products_game_mode_idx").on(t.gameModeId),
     index("products_listing_idx").on(t.isActive, t.sortOrder),
   ],
 );
@@ -213,6 +236,7 @@ export type ProductSnapshot = {
   type: string;
   imageUrl: string | null;
   categoryName: string | null;
+  gameModeName?: string | null;
   shortDescription: string;
   metadata: Record<string, unknown>;
 };

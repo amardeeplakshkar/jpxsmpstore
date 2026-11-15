@@ -3,16 +3,16 @@ import { Box } from "lucide-react";
 
 export function Brand({ name, logoUrl, href = "/" }: { name: string; logoUrl: string; href?: string }) {
   return (
-    <Link href={href} className="flex items-center gap-2.5 font-bold tracking-tight">
+    <Link href={href} className="flex items-center gap-3 text-2xl font-black tracking-tight text-white">
       {logoUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={logoUrl} alt="" className="size-9 rounded-lg object-contain" />
+        <img src={logoUrl} alt="" className="size-[38px] rounded-[10px] object-cover shadow-glow" />
       ) : (
-        <span className="grid size-9 place-items-center rounded-lg bg-primary pixel-border">
-          <Box className="size-5 text-white" aria-hidden />
+        <span className="grid size-[38px] place-items-center rounded-[10px] bg-primary shadow-glow">
+          <Box className="size-5 text-black" aria-hidden />
         </span>
       )}
-      <span className="text-lg">{name}</span>
+      <span>{name}</span>
     </Link>
   );
 }

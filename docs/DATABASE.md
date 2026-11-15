@@ -46,3 +46,10 @@ Fulfillment: `PENDING â†’ PROCESSING/FULFILLED/FAILED/CANCELLED`, `PROCESSING â†
 
 ## Changing the schema
 Edit `src/db/schema/*.ts`, run `npm run db:generate -- --name <change>`, commit the SQL, deploy (the `migrate` service applies it).
+
+
+## Migration 0001 (game modes, discount, cart)
+- New table `game_modes` (name, slug, description, icon_url, accent_color, allowed_types JSONB, sort_order, is_active, soft delete).
+- `products.game_mode_id` (FK, ON DELETE SET NULL) and `products.discount_eligible` (default true).
+- Orders already supported multiple `order_items` with quantity; cart orders now use them. Snapshots also store `gameModeName`.
+- New settings keys: `discount`, `social`.

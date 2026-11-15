@@ -19,16 +19,12 @@ function envBootstrap(key: SettingsKey): Record<string, unknown> {
         passwordEncrypted = "";
       }
     }
-    const trustedSenders = process.env.IMAP_TRUSTED_SENDERS
-      ? process.env.IMAP_TRUSTED_SENDERS.split(",").map((s) => s.trim()).filter(Boolean)
-      : ["noreply@slice.bank.in"];
     return {
       enabled: Boolean(host && process.env.IMAP_USERNAME && process.env.IMAP_PASSWORD),
       host,
       port: Number(process.env.IMAP_PORT ?? 993),
       username: process.env.IMAP_USERNAME ?? "",
       passwordEncrypted,
-      trustedSenders,
     };
   }
   return {};
@@ -63,13 +59,15 @@ export async function getPublicImap(): Promise<ImapPublic> {
 }
 
 export async function getStorefrontSettings() {
-  const [branding, homepage, server, community, legal] = await Promise.all([
+  const [branding, homepage, server, community, legal, discount, social] = await Promise.all([
     getSetting("branding"),
     getSetting("homepage"),
     getSetting("server"),
     getSetting("community"),
     getSetting("legal"),
+    getSetting("discount"),
+    getSetting("social"),
   ]);
-  return { branding, homepage, server, community, legal };
+  return { branding, homepage, server, community, legal, discount, social };
 }
 export type StorefrontSettings = Awaited<ReturnType<typeof getStorefrontSettings>>;

@@ -4,6 +4,7 @@ import { ActionButton } from "components/admin/action-button";
 import { JsonFormDialog, type FormFieldSpec } from "components/admin/json-form-dialog";
 import { PageHeader } from "components/admin/page-header";
 import { SettingsForm } from "components/admin/settings-form";
+import { SocialButtonsEditor } from "components/admin/social-buttons-editor";
 import { Badge } from "components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "components/ui/tabs";
@@ -41,8 +42,10 @@ export default async function StorefrontPage() {
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="homepage">Homepage</TabsTrigger>
           <TabsTrigger value="server">Server</TabsTrigger>
+          <TabsTrigger value="discount">Discount</TabsTrigger>
           <TabsTrigger value="announcements">Announcements</TabsTrigger>
           <TabsTrigger value="footer">Footer and Discord</TabsTrigger>
+          <TabsTrigger value="social">Footer buttons</TabsTrigger>
           <TabsTrigger value="legal">Terms and privacy</TabsTrigger>
         </TabsList>
         <TabsContent value="branding">
@@ -72,6 +75,17 @@ export default async function StorefrontPage() {
             { key: "serverInfo", label: "Server information", type: "textarea", rows: 5 },
             { key: "statusEnabled", label: "Show live server status and player count", type: "switch", hint: "Uses a public status API. Hidden gracefully if unavailable." },
           ]} />
+        </TabsContent>
+        <TabsContent value="discount">
+          <SettingsForm section="discount" title="Store-wide discount" description="Takes a percentage off every product except those with 'Apply store-wide discount' turned off. Customers always get the lower of this and a product's own sale price; the two never stack." initial={s.discount} fields={[
+            { key: "enabled", label: "Discount active", type: "switch" },
+            { key: "percent", label: "Discount percentage (1-90)", type: "number" },
+            { key: "label", label: "Sale name shown to customers", type: "text", placeholder: "Diwali Sale" },
+            { key: "endsAt", label: "Ends at, India time (optional)", type: "datetime-local", hint: "Leave empty to run until you switch it off." },
+          ]} />
+        </TabsContent>
+        <TabsContent value="social">
+          <SocialButtonsEditor initial={s.social} />
         </TabsContent>
         <TabsContent value="announcements">
           <Card>

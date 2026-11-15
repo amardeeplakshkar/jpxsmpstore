@@ -12,7 +12,7 @@ import { SwitchField } from "components/ui/switch";
 import { api } from "lib/client-api";
 
 export type SettingField =
-  | { key: string; label: string; type: "text" | "url" | "number" | "password"; hint?: string; placeholder?: string }
+  | { key: string; label: string; type: "text" | "url" | "number" | "password" | "datetime-local"; hint?: string; placeholder?: string }
   | { key: string; label: string; type: "textarea"; hint?: string; rows?: number }
   | { key: string; label: string; type: "image"; hint?: string }
   | { key: string; label: string; type: "switch"; hint?: string }
