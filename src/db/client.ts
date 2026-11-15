@@ -13,13 +13,17 @@ const url = process.env.DATABASE_URL;
 const isRemote = Boolean(
   url && !url.includes("localhost") && !url.includes("127.0.0.1") && !url.includes("@postgres:")
 );
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
-// The pool does not connect until the first query, so importing this module is cheap.
+// In serverless (Vercel), each function instance runs in its own process.
+// A low max pool (1-2) prevents connection exhaustion on Supabase pooler.
 export const pool =
   globalForDb.__jpxPool ??
   new Pool({
     connectionString: url,
-    max: Number(process.env.DB_POOL_MAX ?? 10),
+    max: Number(process.env.DB_POOL_MAX ?? (isServerless ? 1 : 10)),
+    idleTimeoutMillis: isServerless ? 1500 : 30000,
+    connectionTimeoutMillis: 10000,
     ssl: isRemote ? { rejectUnauthorized: false } : undefined,
   });
 
