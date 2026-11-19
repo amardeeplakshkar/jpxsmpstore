@@ -6,6 +6,16 @@ import IORedis from "ioredis";
 
 const g = globalThis as unknown as { __jpxRedis?: IORedis };
 
+const isServerlessEnv = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+/**
+ * True when a Redis server is actually configured. On Vercel without REDIS_URL there is nothing
+ * listening on localhost, and every rate-limit / heartbeat call used to wait for a connect timeout.
+ */
+export function redisConfigured(): boolean {
+  return Boolean(process.env.REDIS_URL) || !isServerlessEnv;
+}
+
 /** Shared Redis connection. maxRetriesPerRequest=null is required by BullMQ, but bounded on serverless. */
 export function getRedis(): IORedis {
   if (!g.__jpxRedis) {
@@ -20,11 +30,11 @@ export function getRedis(): IORedis {
     g.__jpxRedis = new IORedis(url, {
       maxRetriesPerRequest: isServerless ? 1 : null,
       enableReadyCheck: false,
-      lazyConnect: false,
-      connectTimeout: 5000,
-      commandTimeout: isServerless ? 2000 : undefined,
+      lazyConnect: true,
+      connectTimeout: isServerless ? 1500 : 5000,
+      commandTimeout: isServerless ? 800 : undefined,
       retryStrategy(times) {
-        if (isServerless && times > 2) return null; // don't loop endlessly in serverless
+        if (isServerless && times > 1) return null; // don't loop endlessly in serverless
         return Math.min(times * 100, 2000);
       },
       tls: isUpstash || url.startsWith("rediss://") ? { rejectUnauthorized: false } : undefined,

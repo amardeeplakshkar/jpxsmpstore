@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { eq, ne } from "drizzle-orm";
+import { cached, invalidateStoreCache, TAGS } from "lib/cache";
 import { db, type DbOrTx } from "db/client";
 import { storeSettings } from "db/schema";
 import { encryptSecret } from "lib/crypto";
@@ -30,12 +31,29 @@ function envBootstrap(key: SettingsKey): Record<string, unknown> {
   return {};
 }
 
-export async function getSetting<K extends SettingsKey>(key: K, tx: DbOrTx = db): Promise<SettingsValue<K>> {
+/**
+ * All non-secret settings rows in ONE query, served from the shared data cache.
+ * IMAP (encrypted credentials) is never cached and always read directly.
+ */
+const loadAllSettings = cached(
+  "settings:all",
+  async (): Promise<Record<string, Record<string, unknown>>> => {
+    const rows = await db.select({ key: storeSettings.key, value: storeSettings.value }).from(storeSettings).where(ne(storeSettings.key, "imap"));
+    return Object.fromEntries(rows.map((r) => [r.key, r.value as Record<string, unknown>]));
+  },
+  { tags: [TAGS.settings], revalidate: 600 },
+);
+
+export async function getSetting<K extends SettingsKey>(key: K, tx?: DbOrTx): Promise<SettingsValue<K>> {
   const schema = SETTINGS[key];
   let stored: Record<string, unknown> | null = null;
   try {
-    const row = await tx.query.storeSettings.findFirst({ where: eq(storeSettings.key, key) });
-    stored = row?.value ?? null;
+    if (tx || key === "imap") {
+      const row = await (tx ?? db).query.storeSettings.findFirst({ where: eq(storeSettings.key, key) });
+      stored = (row?.value as Record<string, unknown> | undefined) ?? null;
+    } else {
+      stored = (await loadAllSettings())[key] ?? null;
+    }
   } catch (err) {
     console.error(`[settings] failed to load ${key}`, (err as Error).message);
   }
@@ -51,6 +69,7 @@ export async function saveSetting<K extends SettingsKey>(key: K, value: Settings
     .insert(storeSettings)
     .values({ key, value: parsed, updatedBy: userId })
     .onConflictDoUpdate({ target: storeSettings.key, set: { value: parsed, updatedBy: userId, updatedAt: new Date() } });
+  invalidateStoreCache([TAGS.settings, TAGS.status]);
 }
 
 export async function getPublicImap(): Promise<ImapPublic> {

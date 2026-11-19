@@ -1,5 +1,5 @@
 import { Queue } from "bullmq";
-import { getRedis } from "lib/redis";
+import { getRedis, redisConfigured } from "lib/redis";
 
 export const PAYMENTS_QUEUE = "payments";
 export const HEARTBEAT_KEY = "worker:heartbeat";
@@ -20,6 +20,7 @@ export type WorkerHeartbeat = {
 };
 
 export async function getWorkerHeartbeat(): Promise<WorkerHeartbeat | null> {
+  if (!redisConfigured()) return null;
   try {
     const fetchHeartbeat = async () => {
       const raw = await getRedis().get(HEARTBEAT_KEY);
@@ -28,7 +29,7 @@ export async function getWorkerHeartbeat(): Promise<WorkerHeartbeat | null> {
     // Never allow Redis checks to hang or delay page rendering for more than 1.5s
     return await Promise.race([
       fetchHeartbeat(),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500)),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 800)),
     ]);
   } catch {
     return null;

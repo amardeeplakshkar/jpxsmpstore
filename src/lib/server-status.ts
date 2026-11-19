@@ -1,5 +1,6 @@
 import { getEnv } from "lib/env";
 import { getSetting } from "lib/settings";
+import { cached, TAGS } from "lib/cache";
 
 export type ServerStatus =
   | { state: "unconfigured" }
@@ -11,7 +12,7 @@ let cache: { at: number; value: ServerStatus } | null = null;
 const TTL_MS = 60_000;
 
 /** Fetches status from a public status API with a short timeout and in-memory caching. Never throws. */
-export async function getServerStatus(): Promise<ServerStatus> {
+async function fetchServerStatus(): Promise<ServerStatus> {
   const server = await getSetting("server");
   if (!server.statusEnabled || !server.javaAddress) return { state: "unconfigured" };
   if (cache && Date.now() - cache.at < TTL_MS) return cache.value;
@@ -19,7 +20,7 @@ export async function getServerStatus(): Promise<ServerStatus> {
   try {
     const base = process.env.MINECRAFT_STATUS_API ? getEnv().MINECRAFT_STATUS_API : "https://api.mcsrvstat.us/3";
     const res = await fetch(`${base.replace(/\/$/, "")}/${encodeURIComponent(server.javaAddress)}`, {
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(2500),
       headers: { "User-Agent": "JPXMC-Webstore/1.0" },
       cache: "no-store",
     });
@@ -45,4 +46,11 @@ export async function getServerStatus(): Promise<ServerStatus> {
   }
   cache = { at: Date.now(), value };
   return value;
+}
+
+const sharedStatus = cached("server-status", fetchServerStatus, { tags: [TAGS.status], revalidate: 60 });
+
+/** Status served from the shared data cache (refreshed at most once a minute across all instances). */
+export async function getServerStatus(): Promise<ServerStatus> {
+  return sharedStatus();
 }
