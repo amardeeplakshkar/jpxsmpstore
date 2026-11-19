@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { and, eq, gt, lt } from "drizzle-orm";
 import { db } from "db/client";
 import { adminUsers, sessions, users, type AdminRole, type User } from "db/schema";
@@ -48,28 +49,33 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const token = jar.get(SESSION_COOKIE)?.value;
   if (!token || token.length > 100) return null;
   const id = hmac(token);
+  // One round trip: session + user + admin role.
   const rows = await db
-    .select({ session: sessions, user: users })
+    .select({ expiresAt: sessions.expiresAt, user: users, adminRole: adminUsers.role })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
+    .leftJoin(adminUsers, and(eq(adminUsers.discordId, users.discordId), eq(adminUsers.isActive, true)))
     .where(and(eq(sessions.id, id), gt(sessions.expiresAt, new Date())))
     .limit(1);
   const row = rows[0];
   if (!row) return null;
 
   // Sliding expiry: extend the DB session when less than half the TTL remains.
-  if (row.session.expiresAt.getTime() - Date.now() < REFRESH_THRESHOLD_MS) {
+  // Runs after the response is sent so it never slows the page down.
+  if (row.expiresAt.getTime() - Date.now() < REFRESH_THRESHOLD_MS) {
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-    await db.update(sessions).set({ expiresAt, lastSeenAt: new Date() }).where(eq(sessions.id, id));
     try {
       jar.set(SESSION_COOKIE, token, cookieOptions(expiresAt));
     } catch {
       // Cookies are read-only in Server Components; the cookie is refreshed on the next route handler call.
     }
+    const extend = () => db.update(sessions).set({ expiresAt, lastSeenAt: new Date() }).where(eq(sessions.id, id)).then(() => undefined, () => undefined);
+    try {
+      after(extend);
+    } catch {
+      void extend();
+    }
   }
 
-  const admin = await db.query.adminUsers.findFirst({
-    where: and(eq(adminUsers.discordId, row.user.discordId), eq(adminUsers.isActive, true)),
-  });
-  return { ...row.user, adminRole: admin?.role ?? null };
+  return { ...row.user, adminRole: row.adminRole ?? null };
 });

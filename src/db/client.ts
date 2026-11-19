@@ -23,15 +23,18 @@ const isRemote = Boolean(
 );
 const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
-// In serverless (Vercel), each function instance runs in its own process.
-// A max pool of 1 per container with allowExitOnIdle prevents connection exhaustion.
+// Serverless (Vercel Fluid compute) reuses warm instances across many concurrent requests.
+// The old settings (max 1, 1s idle timeout) serialised every parallel query on one connection and
+// closed it almost immediately, so most requests paid a fresh TLS + auth handshake to Supabase.
+// Supabase's transaction pooler (port 6543) multiplexes, so a few connections per instance is safe.
 export const pool =
   globalForDb.__jpxPool ??
   new Pool({
     connectionString: url,
-    max: Number(process.env.DB_POOL_MAX ?? (isServerless ? 1 : 10)),
-    idleTimeoutMillis: isServerless ? 1000 : 30000,
+    max: Number(process.env.DB_POOL_MAX ?? (isServerless ? 5 : 10)),
+    idleTimeoutMillis: isServerless ? 60_000 : 30_000,
     connectionTimeoutMillis: 5000,
+    keepAlive: true,
     allowExitOnIdle: true,
     ssl: isRemote ? { rejectUnauthorized: false } : undefined,
   });

@@ -1,12 +1,13 @@
-import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db } from "db/client";
 import { announcements, categories, gameModes, products, type ProductType } from "db/schema";
 import { getSetting } from "lib/settings";
+import { cached, TAGS } from "lib/cache";
 import { activeStoreDiscount, priceProduct, type StoreDiscount } from "lib/pricing";
 
 const visible = and(eq(products.isActive, true), isNull(products.deletedAt));
 
-export async function listProducts(opts: { type?: ProductType; categorySlug?: string; featured?: boolean; limit?: number; gameModeId?: string } = {}) {
+async function listProductsUncached(opts: { type?: ProductType; categorySlug?: string; featured?: boolean; limit?: number; gameModeId?: string } = {}) {
   const conditions = [visible];
   if (opts.gameModeId) conditions.push(eq(products.gameModeId, opts.gameModeId));
   if (opts.type) conditions.push(eq(products.type, opts.type));
@@ -22,9 +23,9 @@ export async function listProducts(opts: { type?: ProductType; categorySlug?: st
     .limit(opts.limit ?? 200);
   return rows.map((r) => ({ ...r.product, category: r.category, gameMode: r.gameMode && !r.gameMode.deletedAt ? r.gameMode : null }));
 }
-export type ListedProduct = Awaited<ReturnType<typeof listProducts>>[number];
+export type ListedProduct = Awaited<ReturnType<typeof listProductsUncached>>[number];
 
-export async function getProductBySlug(slug: string) {
+async function getProductBySlugUncached(slug: string) {
   const product = await db.query.products.findFirst({
     where: and(eq(products.slug, slug), visible),
     with: { category: true, gameMode: true, images: { orderBy: (img, { asc: a }) => [a(img.sortOrder)] } },
@@ -32,7 +33,7 @@ export async function getProductBySlug(slug: string) {
   return product ?? null;
 }
 
-export async function listCategories() {
+async function listCategoriesUncached() {
   return db
     .select()
     .from(categories)
@@ -40,21 +41,21 @@ export async function listCategories() {
     .orderBy(asc(categories.sortOrder), asc(categories.name));
 }
 
-export async function listActiveAnnouncements() {
-  const now = new Date();
+async function listAnnouncementsUncached() {
   return db
     .select()
     .from(announcements)
-    .where(
-      and(
-        eq(announcements.isActive, true),
-        isNull(announcements.deletedAt),
-        sql`(${announcements.startsAt} is null or ${announcements.startsAt} <= ${now})`,
-        sql`(${announcements.endsAt} is null or ${announcements.endsAt} >= ${now})`,
-      ),
-    )
+    .where(and(eq(announcements.isActive, true), isNull(announcements.deletedAt)))
     .orderBy(desc(announcements.isPinned), asc(announcements.sortOrder), desc(announcements.createdAt))
-    .limit(10);
+    .limit(50);
+}
+const listAnnouncementsCached = cached("catalog:announcements", listAnnouncementsUncached, { tags: [TAGS.catalog] });
+
+/** Active announcements; the schedule window is applied per request so cached rows never show early or late. */
+export async function listActiveAnnouncements() {
+  const now = Date.now();
+  const rows = await listAnnouncementsCached();
+  return rows.filter((a) => (!a.startsAt || a.startsAt.getTime() <= now) && (!a.endsAt || a.endsAt.getTime() >= now)).slice(0, 10);
 }
 
 /** Shape safe to send to the browser. */
@@ -77,16 +78,16 @@ export function toPublicProduct(p: ListedProduct) {
   };
 }
 
-export async function listGameModes() {
+async function listGameModesUncached() {
   return db
     .select()
     .from(gameModes)
     .where(and(eq(gameModes.isActive, true), isNull(gameModes.deletedAt)))
     .orderBy(asc(gameModes.sortOrder), asc(gameModes.name));
 }
-export type GameMode = Awaited<ReturnType<typeof listGameModes>>[number];
+export type GameMode = Awaited<ReturnType<typeof listGameModesUncached>>[number];
 
-export async function getGameModeBySlug(slug: string) {
+async function getGameModeBySlugUncached(slug: string) {
   if (!/^[a-z0-9-]{1,60}$/.test(slug)) return null;
   const m = await db.query.gameModes.findFirst({ where: and(eq(gameModes.slug, slug), eq(gameModes.isActive, true), isNull(gameModes.deletedAt)) });
   return m ?? null;
@@ -116,3 +117,13 @@ export function toCardData(p: ListedProduct, discount: StoreDiscount) {
     perks: p.type === "RANK" && Array.isArray((p.metadata as { perks?: unknown }).perks) ? ((p.metadata as { perks: string[] }).perks.slice(0, 4)) : [],
   };
 }
+
+// ---------------------------------------------------------------------------
+// Cached public catalog reads. Admin writes invalidate the "catalog" tag (lib/api route wrapper),
+// so storefront pages and APIs read from the data cache instead of Supabase on almost every request.
+// ---------------------------------------------------------------------------
+export const listProducts = cached("catalog:products", listProductsUncached, { tags: [TAGS.catalog] });
+export const getProductBySlug = cached("catalog:product", getProductBySlugUncached, { tags: [TAGS.catalog] });
+export const listCategories = cached("catalog:categories", listCategoriesUncached, { tags: [TAGS.catalog] });
+export const listGameModes = cached("catalog:modes", listGameModesUncached, { tags: [TAGS.catalog] });
+export const getGameModeBySlug = cached("catalog:mode", getGameModeBySlugUncached, { tags: [TAGS.catalog] });

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ZodError, type ZodType } from "zod";
 import { appUrl } from "lib/env";
+import { invalidateStoreCache } from "lib/cache";
 
 export class ApiError extends Error {
   constructor(
@@ -83,7 +84,14 @@ export function route<C = unknown>(handler: Handler<C>): Handler<C> {
   return async (req, ctx) => {
     try {
       assertSameOrigin(req);
-      return await handler(req, ctx);
+      const res = await handler(req, ctx);
+      // Any successful admin write (products, categories, game modes, announcements, settings...)
+      // clears the cached storefront data so the change is visible on the next request.
+      const method = req.method.toUpperCase();
+      if (method !== "GET" && method !== "HEAD" && res.ok && new URL(req.url).pathname.startsWith("/api/admin/")) {
+        invalidateStoreCache();
+      }
+      return res;
     } catch (err) {
       if (err instanceof ApiError) return fail(err.status, err.code, err.message, err.details);
       if (err instanceof ZodError) {
