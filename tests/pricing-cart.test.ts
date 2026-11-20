@@ -44,3 +44,13 @@ test("cart cookie round-trips and rejects junk", () => {
   assert.equal(maxQtyFor("RANK"), 1);
   assert.equal(maxQtyFor("CRATE"), 10);
 });
+
+import { maxQtyFor as maxQtyRule } from "lib/cart";
+test("quantity rules: crates always multiple, ranks single, others follow admin toggle", () => {
+  assert.equal(maxQtyRule("CRATE"), 10);
+  assert.equal(maxQtyRule("CRATE", false), 10);
+  assert.equal(maxQtyRule("RANK", true), 1);
+  assert.equal(maxQtyRule("CUSTOM"), 1);
+  assert.equal(maxQtyRule("CUSTOM", true), 10);
+  assert.equal(maxQtyRule("COINS", false), 1);
+});

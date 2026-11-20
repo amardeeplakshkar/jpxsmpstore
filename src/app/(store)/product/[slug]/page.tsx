@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Check, CircleCheck, Clock, Coins, Gift, Headset, Lock, ShieldCheck, Zap } from "lucide-react";
+import { Check, CircleCheck, Clock, Coins, Gift, Headset, Lock, ShieldCheck } from "lucide-react";
 import { Badge } from "components/ui/badge";
 import { TYPE_META, cardStyle } from "components/products/product-card";
 import { formatINR } from "lib/utils";
@@ -8,7 +8,7 @@ import { RichText } from "components/store/rich-text";
 import { getProductBySlug, getStoreDiscount } from "lib/products/queries";
 import { priceProduct } from "lib/pricing";
 import { maxQtyFor } from "lib/cart";
-import { AddToCartButton } from "components/cart/add-to-cart-button";
+import { PurchaseBox } from "components/cart/purchase-box";
 import { parseMetadata, type CoinsMetadata, type CrateMetadata, type CustomMetadata, type RankMetadata } from "lib/validation/product";
 import { getCurrentUser } from "lib/auth/session";
 
@@ -32,8 +32,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   if (!product) notFound();
   const meta = parseMetadata(product.type, product.metadata);
   const Icon = TYPE_META[product.type].icon;
-  const checkoutPath = `/checkout/${product.slug}`;
-  const buyHref = user ? checkoutPath : `/api/auth/discord?returnTo=${encodeURIComponent(checkoutPath)}`;
   const gallery = product.images;
 
   const discount = await getStoreDiscount();
@@ -125,12 +123,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <CircleCheck className="size-4" /> Available now
             </p>
           </div>
-          <div className="mb-4 flex flex-col gap-4">
-            <AddToCartButton slug={product.slug} maxQty={maxQtyFor(product.type)} variant="accent" className="h-14 w-full text-sm" />
-            <a href={buyHref} className="btn3d btn3d-dark h-14 w-full text-sm">
-              <Zap className="size-4" /> Buy now
-            </a>
-          </div>
+          <PurchaseBox slug={product.slug} maxQty={maxQtyFor(product.type, product.allowMultiple)} unitPaise={pb.unitPaise} loggedIn={Boolean(user)} />
           {!user && <p className="mb-6 text-center text-xs font-semibold text-muted">You&apos;ll log in with Discord before checkout.</p>}
           <div className="mt-6 flex justify-between border-t border-white/5 pt-5">
             {[

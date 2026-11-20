@@ -18,6 +18,8 @@ export type ProductCardData = {
   javaAvailable: boolean;
   bedrockAvailable: boolean;
   isFeatured: boolean;
+  /** Max quantity per order (1 = no quantity picker). */
+  maxQty?: number;
   gameMode: { name: string; slug: string; color: string } | null;
   perks: string[];
 };
@@ -91,7 +93,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       </ul>
       <div className="relative z-20 grid grid-cols-[1fr_auto] gap-3">
         <Link href={`/product/${product.slug}`} className="btn3d btn3d-accent h-12 text-sm">View</Link>
-        <AddToCartButton slug={product.slug} maxQty={maxQtyFor(product.type)} label="" className="h-12 w-14 px-0" />
+        <AddToCartButton slug={product.slug} maxQty={product.maxQty ?? maxQtyFor(product.type)} label="" className="h-12 w-14 px-0" />
       </div>
     </article>
   );

@@ -8,11 +8,13 @@ import { getSetting } from "lib/settings";
 export const metadata = { title: "Checkout" };
 
 /** "Buy now" checkout for a single product. Does not touch the cart. */
-export default async function BuyNowPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const user = await requireUserPage(`/checkout/${slug}`);
+export default async function BuyNowPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ qty?: string }> }) {
+  const [{ slug }, sp] = await Promise.all([params, searchParams]);
+  // Quantity from the product page; quoteCart clamps it to what the product allows (crates up to 10, ranks 1).
+  const qty = Math.min(10, Math.max(1, Number.parseInt(sp.qty ?? "1", 10) || 1));
+  const user = await requireUserPage(qty > 1 ? `/checkout/${slug}?qty=${qty}` : `/checkout/${slug}`);
   if (!/^[a-z0-9-]{1,140}$/.test(slug)) notFound();
-  const [quote, payment] = await Promise.all([quoteCart([{ slug, qty: 1 }]), getSetting("payment")]);
+  const [quote, payment] = await Promise.all([quoteCart([{ slug, qty }]), getSetting("payment")]);
   if (quote.lines.length === 0) notFound();
 
   if (user.status === "BLOCKED") {

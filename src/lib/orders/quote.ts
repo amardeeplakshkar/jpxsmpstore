@@ -54,7 +54,7 @@ export async function quoteCart(input: CartLine[], discount?: StoreDiscount): Pr
       continue;
     }
     const price = priceProduct(p, d);
-    const max = maxQtyFor(p.type);
+    const max = maxQtyFor(p.type, p.allowMultiple);
     const qty = Math.max(1, Math.min(l.qty, max));
     lines.push({
       productId: p.id,

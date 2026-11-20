@@ -34,6 +34,7 @@ export type ProductFormInitial = {
   categoryId: string | null;
   gameModeId: string | null;
   discountEligible: boolean;
+  allowMultiple: boolean;
   shortDescription: string;
   description: string;
   imageUrl: string | null;
@@ -86,6 +87,7 @@ export function ProductForm({ initial, categories, gameModes = [] }: { initial?:
   const [categoryId, setCategoryId] = React.useState(initial?.categoryId ?? "");
   const [gameModeId, setGameModeId] = React.useState(initial?.gameModeId ?? "");
   const [discountEligible, setDiscountEligible] = React.useState(initial?.discountEligible ?? true);
+  const [allowMultiple, setAllowMultiple] = React.useState(initial?.allowMultiple ?? false);
   const [shortDescription, setShort] = React.useState(initial?.shortDescription ?? "");
   const [description, setDescription] = React.useState(initial?.description ?? "");
   const [imageUrl, setImageUrl] = React.useState(initial?.imageUrl ?? "");
@@ -116,6 +118,7 @@ export function ProductForm({ initial, categories, gameModes = [] }: { initial?:
         categoryId: categoryId || null,
         gameModeId: gameModeId || null,
         discountEligible,
+        allowMultiple: type === "CRATE" ? true : type === "RANK" ? false : allowMultiple,
         shortDescription,
         description,
         imageUrl: imageUrl || null,
@@ -275,6 +278,13 @@ export function ProductForm({ initial, categories, gameModes = [] }: { initial?:
         <Card>
           <CardHeader><CardTitle>Availability</CardTitle></CardHeader>
           <CardContent className="space-y-3">
+            {type === "CRATE" ? (
+              <p className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-muted">Crates can always be bought in multiples (up to 10 per order).</p>
+            ) : type === "RANK" ? (
+              <p className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-muted">Ranks are limited to 1 per order.</p>
+            ) : (
+              <SwitchField id="allow-multiple" label="Allow buying multiple" description="Players can pick a quantity (up to 10 per order) instead of buying just one." checked={allowMultiple} onCheckedChange={setAllowMultiple} />
+            )}
             <SwitchField id="active" label="Active" description="Visible and purchasable in the store" checked={isActive} onCheckedChange={setActive} />
             <SwitchField id="featured" label="Featured" description="Shown on the homepage" checked={isFeatured} onCheckedChange={setFeatured} />
             <SwitchField id="java" label="Java Edition" checked={javaAvailable} onCheckedChange={setJava} />

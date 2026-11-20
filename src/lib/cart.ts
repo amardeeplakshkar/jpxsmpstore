@@ -5,8 +5,16 @@ export const MAX_QTY = 10;
 
 export type CartLine = { slug: string; qty: number };
 
-export function maxQtyFor(type: string): number {
-  return type === "RANK" ? 1 : MAX_QTY;
+/**
+ * How many of one product a player can buy in a single order.
+ * - Crates: always multiple (up to MAX_QTY).
+ * - Ranks: always 1.
+ * - Coins and custom items: multiple only when the admin turned on "Allow buying multiple".
+ */
+export function maxQtyFor(type: string, allowMultiple = false): number {
+  if (type === "CRATE") return MAX_QTY;
+  if (type === "RANK") return 1;
+  return allowMultiple ? MAX_QTY : 1;
 }
 
 export function parseCart(raw: string | undefined | null): CartLine[] {
