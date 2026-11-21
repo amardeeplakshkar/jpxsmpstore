@@ -24,11 +24,14 @@ const CATEGORIES = [
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [settings, featuredRanks, featuredCrates, featured, announcements, status, modes, discount] = await Promise.all([
-    getStorefrontSettings(),
-    listProducts({ type: "RANK", featured: true, limit: 6 }),
-    listProducts({ type: "CRATE", featured: true, limit: 6 }),
-    listProducts({ featured: true, limit: 6 }),
+  // Settings are cached, so reading them first is cheap and lets us skip the featured queries when hidden.
+  const settings = await getStorefrontSettings();
+  const showFeatured = settings.homepage.showFeatured !== false;
+  const none = Promise.resolve([] as Awaited<ReturnType<typeof listProducts>>);
+  const [featuredRanks, featuredCrates, featured, announcements, status, modes, discount] = await Promise.all([
+    showFeatured ? listProducts({ type: "RANK", featured: true, limit: 6 }) : none,
+    showFeatured ? listProducts({ type: "CRATE", featured: true, limit: 6 }) : none,
+    showFeatured ? listProducts({ featured: true, limit: 6 }) : none,
     listActiveAnnouncements(),
     getServerStatus(),
     listGameModes(),
@@ -37,7 +40,7 @@ export default async function HomePage() {
   const card = (list: typeof featured) => list.map((p) => toCardData(p, discount));
   const { homepage, server, community, branding } = settings;
   const featuredOther = featured.filter((p) => p.type !== "RANK" && p.type !== "CRATE");
-  const nothingFeatured = featuredRanks.length + featuredCrates.length + featuredOther.length === 0;
+  const nothingFeatured = showFeatured && featuredRanks.length + featuredCrates.length + featuredOther.length === 0;
 
   const online = status.state === "online";
   const statusText = online ? `${status.playersOnline} Players Online` : status.state === "offline" ? "Server Offline" : "Join the adventure";

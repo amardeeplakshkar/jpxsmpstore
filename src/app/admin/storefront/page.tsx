@@ -62,9 +62,10 @@ export default async function StorefrontPage() {
             { key: "heroBannerUrl", label: "Hero banner image", type: "image" },
             { key: "introTitle", label: "Introduction title", type: "text" },
             { key: "introBody", label: "Introduction text", type: "textarea", rows: 6, hint: "Blank lines separate paragraphs." },
+            { key: "showFeatured", label: "Show featured products on the homepage", type: "switch", hint: "Turn off to hide the Featured Ranks, Featured Crates and Featured Products sections." },
             { key: "howToPurchase", label: "How to purchase steps", type: "pairs", a: "title", b: "body", aLabel: "Step title", bLabel: "Step description" },
           ]} />
-          <p className="mt-3 text-sm text-muted">Featured products are chosen with the Featured switch on the Products page.</p>
+          <p className="mt-3 text-sm text-muted">Which products appear is chosen with the Featured switch on the Products page.</p>
         </TabsContent>
         <TabsContent value="server">
           <SettingsForm section="server" title="Minecraft server" initial={s.server} fields={[
