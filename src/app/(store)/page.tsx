@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRight, Boxes, Coins, Crown, GitBranch, Gift, ShieldCheck, Swords, Users } from "lucide-react";
 import { Announcements } from "components/store/announcements";
 import { DiscordIcon } from "components/store/discord-icon";
 import { IpCopy } from "components/store/ip-copy";
+import { LatestVideos, LatestVideosSkeleton } from "components/store/latest-videos";
 import { RichText } from "components/store/rich-text";
 import { SectionHeading } from "components/store/section-heading";
 import { ProductGrid } from "components/products/product-card";
@@ -185,6 +187,11 @@ export default async function HomePage() {
           </p>
         </section>
       )}
+
+      {/* Streamed in so a slow video feed never delays the rest of the page. */}
+      <Suspense fallback={<LatestVideosSkeleton />}>
+        <LatestVideos />
+      </Suspense>
 
       {community.discordInviteUrl && (
         <section className="glass p-10 text-center sm:p-[60px]">
