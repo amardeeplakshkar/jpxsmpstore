@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { and, eq } from "drizzle-orm";
+import { notifyOrder } from "lib/notify/discord";
 import { z } from "zod";
 import { db } from "db/client";
 import { orders, paymentEmails } from "db/schema";
@@ -49,6 +51,10 @@ export const PATCH = route<{ params: Promise<{ id: string }> }>(async (req, { pa
       await audit({ actor: admin, action: "payment_email.link", entityType: "order", entityId: order.id, metadata: { paymentEmailId: id }, req }, tx);
       return { status: "MATCHED", orderId: order.id };
     });
+    if ("orderId" in result && result.orderId) {
+      const orderId = result.orderId;
+      after(() => notifyOrder(orderId, "paid", { note: "Bank email linked manually", by: admin.username }));
+    }
     return ok(result);
   } catch (err) {
     if (isUniqueViolation(err, "payments_transaction_ref_uq")) throw new ApiError(409, "DUPLICATE_TRANSACTION", "This transaction reference is already used by another payment.");

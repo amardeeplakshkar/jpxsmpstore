@@ -1,9 +1,11 @@
+import { after } from "next/server";
 import { desc, eq } from "drizzle-orm";
 import { db } from "db/client";
 import { orders } from "db/schema";
 import { clientIp, ok, parseJson, route } from "lib/api";
 import { requireUserApi } from "lib/auth/guards";
 import { createOrder } from "lib/orders/service";
+import { notifyOrder } from "lib/notify/discord";
 import { rateLimit } from "lib/rate-limit";
 import { checkoutSchema } from "lib/validation/common";
 
@@ -37,5 +39,6 @@ export const POST = route(async (req) => {
   await rateLimit("order-create", `${user.id}:${clientIp(req)}`, 10, 60);
   const input = await parseJson(req, checkoutSchema);
   const { order, created } = await createOrder(user, input);
+  if (created) after(() => notifyOrder(order.id, "created"));
   return ok({ orderNumber: order.orderNumber, created }, created ? 201 : 200);
 });

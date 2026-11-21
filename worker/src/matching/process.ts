@@ -5,6 +5,7 @@ import { isUniqueViolation } from "lib/api";
 import { audit } from "lib/audit";
 import { addHistory, confirmPayment, lockOrder, setPaymentStatus } from "lib/payments/transitions";
 import { getSetting } from "lib/settings";
+import { notifyOrder } from "lib/notify/discord";
 import { parsePaymentEmail } from "../parsers";
 import type { NormalizedEmail, ParsedPayment } from "../types";
 import { decideMatch, type CandidateOrder, type MatchDecision } from "./decide";
@@ -158,6 +159,11 @@ export async function processPaymentEmail(email: NormalizedEmail): Promise<Proce
         actor: { type: "WORKER" },
       });
       await audit({ actorType: "WORKER", action: decision.action === "PAID" ? "payment.auto_confirm" : "payment.email_match", entityType: "order", entityId: order.id, metadata: meta }, tx);
+    });
+    // Outside the transaction: only notify once the change is committed. notifyOrder never throws.
+    await notifyOrder(decision.orderId, decision.action === "PAID" ? "paid" : "matched", {
+      note: decision.action === "PAID" ? `Auto-verified from bank email (${decision.confidence} confidence)` : `Bank email matched (${decision.confidence} confidence) - confirm in admin`,
+      by: "Payment worker",
     });
     return { outcome: "recorded", status: "MATCHED", orderId: decision.orderId, reason: decision.reason };
   } catch (err) {
