@@ -9,6 +9,9 @@ import { formatDateTime, formatINR } from "lib/utils";
 
 export const metadata = { title: "Payment" };
 
+// Per-user page: always rendered on request (never cached).
+export const dynamic = "force-dynamic";
+
 export default async function OrderPage({ params }: { params: Promise<{ orderNumber: string }> }) {
   const { orderNumber } = await params;
   const user = await requireUserPage(`/orders/${orderNumber}`);

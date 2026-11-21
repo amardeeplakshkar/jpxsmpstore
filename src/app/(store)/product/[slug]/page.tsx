@@ -10,7 +10,6 @@ import { priceProduct } from "lib/pricing";
 import { maxQtyFor } from "lib/cart";
 import { ProductPurchase } from "components/cart/product-purchase";
 import { parseMetadata, type CoinsMetadata, type CrateMetadata, type CustomMetadata, type RankMetadata } from "lib/validation/product";
-import { getCurrentUser } from "lib/auth/session";
 
 const RARITY: Record<string, string> = {
   COMMON: "text-zinc-300",
@@ -26,9 +25,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return { title: p?.name ?? "Product", description: p?.shortDescription };
 }
 
+// Cached on the CDN; admin product edits revalidate it immediately via the catalog cache tag.
+export const revalidate = 300;
+export async function generateStaticParams() {
+  return [];
+}
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const [product, user] = await Promise.all([getProductBySlug(slug), getCurrentUser()]);
+  const product = await getProductBySlug(slug);
   if (!product) notFound();
   const meta = parseMetadata(product.type, product.metadata);
   const Icon = TYPE_META[product.type].icon;
@@ -123,8 +128,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <CircleCheck className="size-4" /> Available now
             </p>
           </div>
-          <ProductPurchase slug={product.slug} maxQty={maxQtyFor(product)} unitPaise={price} loggedIn={Boolean(user)} />
-          {!user && <p className="mb-6 text-center text-xs font-semibold text-muted">You&apos;ll log in with Discord before checkout.</p>}
+          <ProductPurchase slug={product.slug} maxQty={maxQtyFor(product)} unitPaise={price} />
           <div className="mt-6 flex justify-between border-t border-white/5 pt-5">
             {[
               { icon: Lock, label: "Secure UPI" },

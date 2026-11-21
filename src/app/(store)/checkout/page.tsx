@@ -11,6 +11,9 @@ import { getSetting } from "lib/settings";
 export const metadata = { title: "Checkout" };
 
 /** Cart checkout. The cart cookie only holds slugs and quantities; everything is priced here on the server. */
+// Per-user page: always rendered on request (never cached).
+export const dynamic = "force-dynamic";
+
 export default async function CartCheckoutPage() {
   const user = await requireUserPage("/checkout");
   const lines = parseCart((await cookies()).get(CART_COOKIE)?.value);
