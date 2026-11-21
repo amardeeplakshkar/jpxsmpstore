@@ -1,9 +1,11 @@
+import { after } from "next/server";
 import { and, count, eq } from "drizzle-orm";
 import { db } from "db/client";
 import { orders, paymentScreenshots } from "db/schema";
 import { ApiError, clientIp, fail, ok, route } from "lib/api";
 import { audit } from "lib/audit";
 import { requireUserApi } from "lib/auth/guards";
+import { notifyOrder } from "lib/notify/discord";
 import { addHistory, lockOrder, setPaymentStatus } from "lib/payments/transitions";
 import { rateLimit } from "lib/rate-limit";
 import { getSetting } from "lib/settings";
@@ -66,5 +68,6 @@ export const POST = route<{ params: Promise<{ id: string }> }>(async (req, { par
     await audit({ actor: { id: user.id, discordId: user.discordId }, actorType: "USER", action: "payment.screenshot_upload", entityType: "order", entityId: order.id, metadata: { screenshotId: s.id }, req }, tx);
     return s;
   });
+  after(() => notifyOrder(order.id, "screenshot", { screenshotId: shot.id }));
   return ok({ id: shot.id, status: shot.status, createdAt: shot.createdAt }, 201);
 });

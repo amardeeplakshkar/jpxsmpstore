@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { z } from "zod";
+import { notifyOrder } from "lib/notify/discord";
 import { ok, parseJson, route } from "lib/api";
 import { requireAdminApi } from "lib/auth/guards";
 import { reviewScreenshot } from "lib/admin/order-actions";
@@ -13,5 +15,10 @@ export const PATCH = route<{ params: Promise<{ id: string }> }>(async (req, { pa
   const { id } = await params;
   const input = await parseJson(req, schema);
   const order = await reviewScreenshot(admin, id, input.decision === "APPROVE" ? { decision: "APPROVE", transactionRef: input.transactionRef || null } : input, req);
+  after(() =>
+    input.decision === "APPROVE"
+      ? notifyOrder(order.id, "paid", { screenshotId: id, note: "Approved from screenshot", by: admin.username })
+      : notifyOrder(order.id, "screenshot_rejected", { note: input.reason, by: admin.username }),
+  );
   return ok({ orderId: order.id, paymentStatus: order.paymentStatus });
 });
