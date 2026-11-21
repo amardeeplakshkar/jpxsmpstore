@@ -6,8 +6,6 @@ import { IpCopy } from "components/store/ip-copy";
 import { DiscordIcon } from "components/store/discord-icon";
 import { NavLinks } from "components/store/nav-links";
 import { CartButton } from "components/cart/cart-button";
-import type { SessionUser } from "lib/auth/session";
-import { discordAvatarUrl } from "lib/utils";
 
 export const STORE_LINKS = [
   { href: "/", label: "Home" },
@@ -17,15 +15,8 @@ export const STORE_LINKS = [
   { href: "/shop", label: "More" },
 ];
 
-export function Navbar({ storeName, logoUrl, serverIp, discordUrl, user, modes = [] }: { storeName: string; logoUrl: string; serverIp: string; discordUrl: string; user: SessionUser | null; modes?: { name: string; slug: string }[] }) {
+export function Navbar({ storeName, logoUrl, serverIp, discordUrl, modes = [] }: { storeName: string; logoUrl: string; serverIp: string; discordUrl: string; modes?: { name: string; slug: string }[] }) {
   const links = modes.length ? [{ href: "/", label: "Home" }, ...modes.map((m) => ({ href: `/${m.slug}`, label: m.name })), { href: "/orders", label: "Orders" }] : STORE_LINKS;
-  const menuUser = user
-    ? {
-        name: user.globalName ?? user.username,
-        avatar: discordAvatarUrl(user.discordId, user.avatar, 64),
-        isAdmin: Boolean(user.adminRole),
-      }
-    : null;
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-[rgb(7_9_14/0.9)] shadow-[0_10px_30px_rgb(0_0_0/0.8)] backdrop-blur-[25px]">
       <nav className="mx-auto flex h-[76px] max-w-[1400px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10" aria-label="Main">
@@ -41,7 +32,7 @@ export function Navbar({ storeName, logoUrl, serverIp, discordUrl, user, modes =
             </Link>
           )}
           <CartButton />
-          <UserMenu user={menuUser} />
+          <UserMenu />
           <MobileNav links={links} />
         </div>
       </nav>

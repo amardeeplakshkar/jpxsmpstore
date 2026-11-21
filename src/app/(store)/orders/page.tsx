@@ -11,6 +11,9 @@ import { formatDateTime, formatINR } from "lib/utils";
 
 export const metadata = { title: "Order history" };
 
+// Per-user page: always rendered on request (never cached).
+export const dynamic = "force-dynamic";
+
 export default async function OrdersPage() {
   const user = await requireUserPage("/orders");
   const rows = await db.query.orders.findMany({ where: eq(orders.userId, user.id), orderBy: [desc(orders.createdAt)], limit: 100, with: { items: true } });

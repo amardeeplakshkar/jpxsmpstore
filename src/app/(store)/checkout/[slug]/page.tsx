@@ -9,6 +9,9 @@ import { getSetting } from "lib/settings";
 export const metadata = { title: "Checkout" };
 
 /** "Buy now" checkout for a single product. Does not touch the cart. */
+// Per-user page: always rendered on request (never cached).
+export const dynamic = "force-dynamic";
+
 export default async function BuyNowPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ qty?: string | string[] }> }) {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
   // Quantity chosen on the product page. quoteCart re-applies the product's own limit (ranks 1, crates up to 10, others per admin toggle).

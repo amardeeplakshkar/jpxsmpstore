@@ -2,16 +2,20 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Loader2, Minus, Plus, ShoppingCart, Trash2, X } from "lucide-react";
+import { AlertTriangle, Loader2, Minus, Plus, RotateCw, ShoppingCart, Trash2, X } from "lucide-react";
+import { useSession } from "components/auth/session-provider";
 import { useCart } from "components/cart/cart-provider";
-import { api } from "lib/client-api";
+import { api, ClientApiError } from "lib/client-api";
 import type { Quote } from "lib/orders/quote";
 import { formatINR } from "lib/utils";
 
-export function CartDrawer({ loggedIn }: { loggedIn: boolean }) {
+export function CartDrawer() {
+  const loggedIn = Boolean(useSession().user);
   const { lines, open, setOpen, setQty, remove } = useCart();
   const [quote, setQuote] = React.useState<Quote | null>(null);
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+  const [attempt, setAttempt] = React.useState(0);
   const key = JSON.stringify(lines);
 
   React.useEffect(() => {
@@ -22,15 +26,21 @@ export function CartDrawer({ loggedIn }: { loggedIn: boolean }) {
     }
     let cancelled = false;
     setLoading(true);
+    setError(null);
     api<Quote>("/api/cart/quote", { method: "POST", json: { items: lines } })
       .then((q) => !cancelled && setQuote(q))
-      .catch(() => !cancelled && setQuote(null))
+      .catch((err) => {
+        if (cancelled) return;
+        // Previously a failed quote left the drawer completely blank. Say what went wrong instead.
+        setQuote(null);
+        setError(err instanceof ClientApiError ? err.message : "Couldn't load your cart. Check your connection and try again.");
+      })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, key]);
+  }, [open, key, attempt]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -67,6 +77,16 @@ export function CartDrawer({ loggedIn }: { loggedIn: boolean }) {
           )}
           {loading && !quote && lines.length > 0 && (
             <div className="grid place-items-center py-16"><Loader2 className="size-6 animate-spin text-primary" /></div>
+          )}
+          {error && !loading && lines.length > 0 && (
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-6 text-center">
+              <AlertTriangle className="mx-auto mb-3 size-7 text-red-300" />
+              <p className="font-bold text-red-200">{error}</p>
+              <p className="mt-1 text-xs font-semibold text-muted">Your {lines.reduce((a, l) => a + l.qty, 0)} item(s) are still saved.</p>
+              <button type="button" onClick={() => setAttempt((n) => n + 1)} className="btn3d btn3d-dark mt-4 h-11 px-5 text-xs">
+                <RotateCw className="size-4" /> Try again
+              </button>
+            </div>
           )}
           {quote?.unavailable.map((n) => (
             <p key={n} className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300">{n} is no longer available. Remove it to continue.</p>

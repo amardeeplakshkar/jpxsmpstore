@@ -20,6 +20,9 @@ const CATEGORIES = [
   { href: "/coins", title: "Coins", body: "In-game currency packs", icon: Coins },
 ];
 
+// Served from the CDN cache and refreshed in the background; admin edits revalidate it immediately.
+export const revalidate = 60;
+
 export default async function HomePage() {
   const [settings, featuredRanks, featuredCrates, featured, announcements, status, modes, discount] = await Promise.all([
     getStorefrontSettings(),

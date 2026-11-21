@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, LogOut, Receipt, User } from "lucide-react";
+import { useSession } from "components/auth/session-provider";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "components/ui/dropdown-menu";
 
-export function UserMenu({ user }: { user: { name: string; avatar: string; isAdmin: boolean } | null }) {
+export function UserMenu() {
   const pathname = usePathname();
+  const { ready, user } = useSession();
+  // Same footprint as the Login button while the session loads, so the navbar doesn't jump.
+  if (!ready) return <span aria-hidden className="h-11 w-[92px] animate-pulse rounded-xl bg-white/5" />;
   if (!user) {
     return (
       <a href={`/api/auth/discord?returnTo=${encodeURIComponent(pathname || "/")}`} className="btn3d btn3d-accent h-11 px-6 text-sm">
