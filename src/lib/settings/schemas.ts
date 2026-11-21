@@ -14,6 +14,8 @@ export const homepageSchema = z.object({
   heroBannerUrl: optionalUrl,
   introTitle: z.string().max(120).default("Welcome to JPXMC"),
   introBody: z.string().max(4000).default(""),
+  /** Show the Featured Ranks / Crates / Products sections on the homepage. */
+  showFeatured: z.boolean().default(true),
   howToPurchase: z
     .array(z.object({ title: z.string().max(80), body: z.string().max(300) }))
     .max(8)
