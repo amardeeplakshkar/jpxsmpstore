@@ -10,19 +10,19 @@ export function UserMenu() {
   const pathname = usePathname();
   const { ready, user } = useSession();
   // Same footprint as the Login button while the session loads, so the navbar doesn't jump.
-  if (!ready) return <span aria-hidden className="h-11 w-[92px] animate-pulse rounded-xl bg-white/5" />;
+  if (!ready) return <span aria-hidden className="h-10 w-10 animate-pulse rounded-full bg-white/5 sm:h-11 sm:w-[92px] sm:rounded-xl" />;
   if (!user) {
     return (
-      <a href={`/api/auth/discord?returnTo=${encodeURIComponent(pathname || "/")}`} className="btn3d btn3d-accent h-11 px-6 text-sm">
+      <a href={`/api/auth/discord?returnTo=${encodeURIComponent(pathname || "/")}`} className="btn3d btn3d-accent h-10 px-4 text-xs sm:h-11 sm:px-6 sm:text-sm">
         Login
       </a>
     );
   }
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-full border border-border bg-white/5 py-1 pl-1 pr-4 transition hover:bg-white/10 cursor-pointer">
+      <DropdownMenuTrigger className="flex shrink-0 items-center gap-2.5 rounded-full border border-border bg-white/5 p-[3px] transition sm:py-1 sm:pl-1 sm:pr-4 hover:bg-white/10 cursor-pointer">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={user.avatar} alt="" className="size-[34px] rounded-full border-2 border-primary" />
+        <img src={user.avatar} alt="" className="size-8 rounded-full border-2 border-primary sm:size-[34px]" />
         <span className="hidden max-w-32 truncate text-[13px] font-extrabold uppercase sm:inline">{user.name}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent>

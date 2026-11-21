@@ -87,10 +87,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
           <div className="space-y-8 p-6 sm:p-10">
             {gallery.length > 0 && (
-              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              // Preview images (usually the in-game kit / GUI screenshot) shown full width so items are readable.
+              <div className="space-y-4">
                 {gallery.map((img) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={img.id} src={img.url} alt={img.alt ?? ""} className="aspect-square rounded-xl border border-white/10 bg-elevated object-contain p-2" />
+                  <a key={img.id} href={img.url} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-2xl border border-white/10 bg-black/40" title="Open full size">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.url} alt={img.alt ?? `${product.name} preview`} loading="lazy" className="block h-auto w-full object-contain [image-rendering:pixelated]" />
+                  </a>
                 ))}
               </div>
             )}
