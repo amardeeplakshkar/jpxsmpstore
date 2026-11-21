@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { JsonLd } from "components/seo/json-ld";
+import { absoluteUrl, metaDescription } from "lib/seo";
 import { ArrowRight, Boxes, Coins, Crown, GitBranch, Gift, ShieldCheck, Swords, Users } from "lucide-react";
 import { Announcements } from "components/store/announcements";
 import { DiscordIcon } from "components/store/discord-icon";
@@ -54,8 +56,29 @@ export default async function HomePage() {
     { icon: ShieldCheck, value: "Secure UPI", label: "Verified payments", accent: true },
   ];
 
+  const sameAs = [community.discordInviteUrl, ...settings.social.buttons.map((b) => b.url)].filter((u): u is string => typeof u === "string" && /^https:\/\//.test(u));
+  const homeLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: branding.storeName,
+      url: absoluteUrl("/"),
+      logo: absoluteUrl(branding.logoUrl),
+      sameAs: sameAs.length ? sameAs : undefined,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: `${branding.storeName} Store`,
+      url: absoluteUrl("/"),
+      description: metaDescription(homepage.heroDescription, branding.tagline),
+      inLanguage: "en-IN",
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-12 sm:py-16">
+      <JsonLd data={homeLd} />
       {/* Hero */}
       <section className="glass relative mb-14 flex flex-col items-center justify-between gap-10 overflow-hidden p-8 text-center sm:p-12 lg:flex-row lg:p-[60px] lg:text-left">
         {homepage.heroBannerUrl && (

@@ -3,7 +3,7 @@ import { RichText } from "components/store/rich-text";
 import { EmptyState } from "components/ui/empty-state";
 import { getSetting } from "lib/settings";
 
-export const metadata = { title: "Privacy policy" };
+export const metadata = { title: "Privacy policy", alternates: { canonical: "/privacy" } };
 
 export default async function Page() {
   const legal = await getSetting("legal");

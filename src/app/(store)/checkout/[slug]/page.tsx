@@ -6,7 +6,7 @@ import { clampQty } from "lib/cart";
 import { publicQuote, quoteCart } from "lib/orders/quote";
 import { getSetting } from "lib/settings";
 
-export const metadata = { title: "Checkout" };
+export const metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
 /** "Buy now" checkout for a single product. Does not touch the cart. */
 // Per-user page: always rendered on request (never cached).
