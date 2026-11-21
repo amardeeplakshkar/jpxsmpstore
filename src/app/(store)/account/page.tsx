@@ -6,7 +6,7 @@ import { orders } from "db/schema";
 import { requireUserPage } from "lib/auth/guards";
 import { discordAvatarUrl, formatDate, formatDateTime, formatINR } from "lib/utils";
 
-export const metadata = { title: "Profile" };
+export const metadata = { title: "Profile", robots: { index: false, follow: false } };
 
 // Per-user page: always rendered on request (never cached).
 export const dynamic = "force-dynamic";

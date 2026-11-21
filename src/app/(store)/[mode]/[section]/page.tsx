@@ -4,7 +4,14 @@ import { getGameModeBySlug } from "lib/products/queries";
 export async function generateMetadata({ params }: { params: Promise<{ mode: string; section: string }> }) {
   const { mode, section } = await params;
   const m = await getGameModeBySlug(mode);
-  return { title: m ? `${m.name} ${section.charAt(0).toUpperCase()}${section.slice(1)}` : "Not found" };
+  if (!m) return { title: "Not found", robots: { index: false } };
+  const label = `${section.charAt(0).toUpperCase()}${section.slice(1)}`;
+  return {
+    title: `${m.name} ${label}`,
+    description: `Buy ${m.name} ${section} on the official store. Pay with UPI, delivered in-game.`,
+    alternates: { canonical: `/${mode}/${section}` },
+    openGraph: { url: `/${mode}/${section}` },
+  };
 }
 
 // Served from the CDN cache and refreshed in the background; admin edits revalidate it immediately.

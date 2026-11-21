@@ -7,7 +7,7 @@ import { upiQrDataUrl } from "lib/payments/upi";
 import { getSetting } from "lib/settings";
 import { formatDateTime, formatINR } from "lib/utils";
 
-export const metadata = { title: "Payment" };
+export const metadata = { title: "Payment", robots: { index: false, follow: false } };
 
 // Per-user page: always rendered on request (never cached).
 export const dynamic = "force-dynamic";

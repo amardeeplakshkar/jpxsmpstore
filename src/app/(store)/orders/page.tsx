@@ -9,7 +9,7 @@ import { StatusBadge } from "components/ui/status-badge";
 import { requireUserPage } from "lib/auth/guards";
 import { formatDateTime, formatINR } from "lib/utils";
 
-export const metadata = { title: "Order history" };
+export const metadata = { title: "Order history", robots: { index: false, follow: false } };
 
 // Per-user page: always rendered on request (never cached).
 export const dynamic = "force-dynamic";

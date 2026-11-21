@@ -9,6 +9,8 @@ import { getProductBySlug, getStoreDiscount } from "lib/products/queries";
 import { priceProduct } from "lib/pricing";
 import { maxQtyFor } from "lib/cart";
 import { ProductPurchase } from "components/cart/product-purchase";
+import { JsonLd } from "components/seo/json-ld";
+import { absoluteUrl, metaDescription } from "lib/seo";
 import { parseMetadata, type CoinsMetadata, type CrateMetadata, type CustomMetadata, type RankMetadata } from "lib/validation/product";
 
 const RARITY: Record<string, string> = {
@@ -22,7 +24,18 @@ const RARITY: Record<string, string> = {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const p = await getProductBySlug(slug);
-  return { title: p?.name ?? "Product", description: p?.shortDescription };
+  if (!p) return { title: "Product not found", robots: { index: false } };
+  const typeWord = p.type === "RANK" ? "Rank" : p.type === "CRATE" ? "Crate Key" : p.type === "COINS" ? "Coins" : "Item";
+  const description = metaDescription(p.shortDescription, p.description, `Buy ${p.name} on the official store. Pay with UPI, delivered in-game.`);
+  const image = absoluteUrl(p.imageUrl) ?? absoluteUrl(p.images?.[0]?.url);
+  const title = p.name.toLowerCase().includes(typeWord.toLowerCase().split(" ")[0]) ? p.name : `${p.name} ${typeWord}`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/product/${p.slug}` },
+    openGraph: { type: "website", url: `/product/${p.slug}`, title, description, images: image ? [{ url: image, alt: p.name }] : undefined },
+    twitter: { card: image ? "summary_large_image" : "summary", title, description, images: image ? [image] : undefined },
+  };
 }
 
 // Cached on the CDN; admin product edits revalidate it immediately via the catalog cache tag.
@@ -49,8 +62,41 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     ? `/${mode.slug}/${TYPE_META[product.type].section}`
     : `/${product.type === "RANK" ? "ranks" : product.type === "CRATE" ? "crates" : product.type === "COINS" ? "coins" : "shop"}`;
 
+  const productUrl = absoluteUrl(`/product/${product.slug}`);
+  const images = [product.imageUrl, ...gallery.map((g) => g.url)].map((u) => absoluteUrl(u)).filter((u): u is string => Boolean(u));
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: product.name,
+      description: metaDescription(product.shortDescription, product.description) ?? product.name,
+      sku: product.slug,
+      image: images.length ? images : undefined,
+      category: product.category?.name ?? TYPE_META[product.type].section,
+      url: productUrl,
+      offers: {
+        "@type": "Offer",
+        price: (price / 100).toFixed(2),
+        priceCurrency: "INR",
+        availability: "https://schema.org/InStock",
+        url: productUrl,
+        ...(discount?.endsAt && onSale ? { priceValidUntil: discount.endsAt.slice(0, 10) } : {}),
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Store", item: absoluteUrl("/") },
+        ...(mode ? [{ "@type": "ListItem", position: 2, name: mode.name, item: absoluteUrl(`/${mode.slug}`) }] : []),
+        { "@type": "ListItem", position: mode ? 3 : 2, name: product.name, item: productUrl },
+      ],
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-[1100px] px-5 py-12 pb-24" style={cardStyle(product.type)}>
+      <JsonLd data={structuredData} />
       <nav aria-label="Breadcrumb" className="mb-6 text-sm font-bold text-muted">
         <Link href="/" className="hover:text-white">Store</Link> /{" "}
         {mode && (

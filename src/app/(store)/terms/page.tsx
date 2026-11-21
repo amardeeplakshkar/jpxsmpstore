@@ -3,7 +3,7 @@ import { RichText } from "components/store/rich-text";
 import { EmptyState } from "components/ui/empty-state";
 import { getSetting } from "lib/settings";
 
-export const metadata = { title: "Terms and conditions" };
+export const metadata = { title: "Terms and conditions", alternates: { canonical: "/terms" } };
 
 export default async function Page() {
   const legal = await getSetting("legal");

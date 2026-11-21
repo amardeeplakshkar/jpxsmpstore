@@ -8,7 +8,7 @@ import { CART_COOKIE, parseCart } from "lib/cart";
 import { publicQuote, quoteCart } from "lib/orders/quote";
 import { getSetting } from "lib/settings";
 
-export const metadata = { title: "Checkout" };
+export const metadata = { title: "Checkout", robots: { index: false, follow: false } };
 
 /** Cart checkout. The cart cookie only holds slugs and quantities; everything is priced here on the server. */
 // Per-user page: always rendered on request (never cached).
