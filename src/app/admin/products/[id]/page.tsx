@@ -27,6 +27,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           categoryId: p.categoryId,
           gameModeId: p.gameModeId,
           discountEligible: p.discountEligible,
+          allowMultiple: p.allowMultiple,
           shortDescription: p.shortDescription,
           description: p.description,
           imageUrl: p.imageUrl,

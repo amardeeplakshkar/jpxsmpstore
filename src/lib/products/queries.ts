@@ -3,6 +3,7 @@ import { db } from "db/client";
 import { announcements, categories, gameModes, products, type ProductType } from "db/schema";
 import { getSetting } from "lib/settings";
 import { cached, TAGS } from "lib/cache";
+import { maxQtyFor } from "lib/cart";
 import { activeStoreDiscount, priceProduct, type StoreDiscount } from "lib/pricing";
 
 const visible = and(eq(products.isActive, true), isNull(products.deletedAt));
@@ -113,6 +114,7 @@ export function toCardData(p: ListedProduct, discount: StoreDiscount) {
     javaAvailable: p.javaAvailable,
     bedrockAvailable: p.bedrockAvailable,
     isFeatured: p.isFeatured,
+    maxQty: maxQtyFor(p),
     gameMode: p.gameMode ? { name: p.gameMode.name, slug: p.gameMode.slug, color: p.gameMode.accentColor } : null,
     perks: p.type === "RANK" && Array.isArray((p.metadata as { perks?: unknown }).perks) ? ((p.metadata as { perks: string[] }).perks.slice(0, 4)) : [],
   };

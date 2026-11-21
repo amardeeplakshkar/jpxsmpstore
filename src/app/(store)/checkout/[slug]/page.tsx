@@ -2,17 +2,20 @@ import { notFound } from "next/navigation";
 import { CheckoutFlow } from "components/checkout/checkout-flow";
 import { EmptyState } from "components/ui/empty-state";
 import { requireUserPage } from "lib/auth/guards";
+import { clampQty } from "lib/cart";
 import { publicQuote, quoteCart } from "lib/orders/quote";
 import { getSetting } from "lib/settings";
 
 export const metadata = { title: "Checkout" };
 
 /** "Buy now" checkout for a single product. Does not touch the cart. */
-export default async function BuyNowPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const user = await requireUserPage(`/checkout/${slug}`);
+export default async function BuyNowPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ qty?: string | string[] }> }) {
+  const [{ slug }, sp] = await Promise.all([params, searchParams]);
+  // Quantity chosen on the product page. quoteCart re-applies the product's own limit (ranks 1, crates up to 10, others per admin toggle).
+  const qty = clampQty(Array.isArray(sp.qty) ? sp.qty[0] : sp.qty);
+  const user = await requireUserPage(qty > 1 ? `/checkout/${slug}?qty=${qty}` : `/checkout/${slug}`);
   if (!/^[a-z0-9-]{1,140}$/.test(slug)) notFound();
-  const [quote, payment] = await Promise.all([quoteCart([{ slug, qty: 1 }]), getSetting("payment")]);
+  const [quote, payment] = await Promise.all([quoteCart([{ slug, qty }]), getSetting("payment")]);
   if (quote.lines.length === 0) notFound();
 
   if (user.status === "BLOCKED") {

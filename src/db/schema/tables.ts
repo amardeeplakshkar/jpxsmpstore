@@ -137,6 +137,8 @@ export const products = pgTable(
     regularPricePaise: integer("regular_price_paise").notNull(),
     salePricePaise: integer("sale_price_paise"),
     discountEligible: boolean("discount_eligible").default(true).notNull(),
+    /** Coins/custom items: let players buy more than one per order. Crates are always multi-buy, ranks never are (see lib/cart). */
+    allowMultiple: boolean("allow_multiple").default(false).notNull(),
     javaAvailable: boolean("java_available").default(true).notNull(),
     bedrockAvailable: boolean("bedrock_available").default(true).notNull(),
     metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),

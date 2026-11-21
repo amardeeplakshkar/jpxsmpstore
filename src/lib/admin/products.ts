@@ -2,6 +2,7 @@ import { and, eq, isNull, ne } from "drizzle-orm";
 import { db, type Tx } from "db/client";
 import { gameModes, productImages, products } from "db/schema";
 import { ApiError } from "lib/api";
+import { allowsMultiple } from "lib/cart";
 import type { ProductInput } from "lib/validation/product";
 
 export async function assertSlugFree(slug: string, exceptId?: string) {
@@ -14,7 +15,8 @@ export async function assertSlugFree(slug: string, exceptId?: string) {
 
 export function productValues(input: ProductInput) {
   const { gallery: _g, ...rest } = input;
-  return { ...rest, metadata: input.metadata as Record<string, unknown> };
+  // Store the effective rule so crates are always multi-buy and ranks never are, whatever the form sent.
+  return { ...rest, allowMultiple: allowsMultiple(input), metadata: input.metadata as Record<string, unknown> };
 }
 
 export async function replaceGallery(tx: Tx, productId: string, gallery: string[]) {
