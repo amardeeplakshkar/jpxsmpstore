@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { activeStoreDiscount, priceProduct } from "lib/pricing";
-import { maxQtyFor, parseCart, serializeCart } from "lib/cart";
+import { allowsMultiple, clampQty, maxQtyFor, parseCart, serializeCart } from "lib/cart";
 
 const d10 = { percent: 10, label: "Sale", endsAt: null };
 
@@ -41,6 +41,25 @@ test("cart cookie round-trips and rejects junk", () => {
   assert.deepEqual(parseCart(serializeCart(lines)), lines);
   assert.deepEqual(parseCart("not-json"), []);
   assert.deepEqual(parseCart(encodeURIComponent(JSON.stringify([{ s: "../etc", q: 1 }, { s: "ok", q: 99 }, { s: "ok", q: 1 }]))), [{ slug: "ok", qty: 10 }]);
-  assert.equal(maxQtyFor("RANK"), 1);
-  assert.equal(maxQtyFor("CRATE"), 10);
+});
+
+test("quantity rules: crates always multi-buy, ranks single, coins/custom follow the admin toggle", () => {
+  assert.equal(maxQtyFor({ type: "CRATE" }), 10);
+  assert.equal(maxQtyFor({ type: "CRATE", allowMultiple: false }), 10);
+  assert.equal(maxQtyFor({ type: "RANK", allowMultiple: true }), 1);
+  assert.equal(maxQtyFor({ type: "COINS" }), 1);
+  assert.equal(maxQtyFor({ type: "COINS", allowMultiple: true }), 10);
+  assert.equal(maxQtyFor({ type: "CUSTOM", allowMultiple: false }), 1);
+  assert.equal(allowsMultiple({ type: "CUSTOM", allowMultiple: true }), true);
+});
+
+test("clampQty sanitises untrusted quantities", () => {
+  assert.equal(clampQty("3"), 3);
+  assert.equal(clampQty("0"), 1);
+  assert.equal(clampQty("-5"), 1);
+  assert.equal(clampQty("abc"), 1);
+  assert.equal(clampQty(undefined), 1);
+  assert.equal(clampQty("99"), 10);
+  assert.equal(clampQty(4, 1), 1);
+  assert.equal(clampQty(2.7), 2);
 });

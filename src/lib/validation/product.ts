@@ -57,6 +57,7 @@ const productBase = z.object({
   categoryId: z.string().uuid().nullable().default(null),
   gameModeId: z.string().uuid().nullable().default(null),
   discountEligible: z.boolean().default(true),
+  allowMultiple: z.boolean().default(false),
   shortDescription: z.string().max(300).default(""),
   description: z.string().max(20000).default(""),
   imageUrl: z.string().max(1000).nullable().default(null),
