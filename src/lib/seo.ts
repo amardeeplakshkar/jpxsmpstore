@@ -41,3 +41,18 @@ export function jsonLd(data: unknown): string {
 
 /** Metadata for pages that should never appear in search results (per-user pages). */
 export const NOINDEX = { robots: { index: false, follow: false } } as const;
+
+/**
+ * Site-wide share images: src/app/opengraph-image.png and src/app/twitter-image.png.
+ * Referenced explicitly because any page that sets its own `openGraph`/`twitter` replaces the parent's
+ * object entirely, which would otherwise drop the image on that page.
+ */
+export const DEFAULT_OG_IMAGES = [{ url: "/opengraph-image.png", width: 1200, height: 630 }];
+export const DEFAULT_TWITTER_IMAGES = ["/twitter-image.png"];
+/** openGraph + twitter for a page that has no image of its own. */
+export function socialMeta(path: string) {
+  return {
+    openGraph: { url: path, images: DEFAULT_OG_IMAGES },
+    twitter: { card: "summary_large_image" as const, images: DEFAULT_TWITTER_IMAGES },
+  };
+}

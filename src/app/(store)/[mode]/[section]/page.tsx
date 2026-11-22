@@ -1,3 +1,4 @@
+import { socialMeta } from "lib/seo";
 import { ModePage } from "components/store/mode-page";
 import { getGameModeBySlug } from "lib/products/queries";
 
@@ -10,7 +11,7 @@ export async function generateMetadata({ params }: { params: Promise<{ mode: str
     title: `${m.name} ${label}`,
     description: `Buy ${m.name} ${section} on the official store. Pay with UPI, delivered in-game.`,
     alternates: { canonical: `/${mode}/${section}` },
-    openGraph: { url: `/${mode}/${section}` },
+    ...socialMeta(`/${mode}/${section}`),
   };
 }
 

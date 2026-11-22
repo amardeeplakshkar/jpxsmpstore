@@ -1,6 +1,6 @@
 import { ModePage } from "components/store/mode-page";
 import { getGameModeBySlug } from "lib/products/queries";
-import { metaDescription } from "lib/seo";
+import { metaDescription, socialMeta } from "lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ mode: string }> }) {
   const slug = (await params).mode;
@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: Promise<{ mode: str
     title: `${m.name} Store - Ranks, Crates & Coins`,
     description: metaDescription(m.description, `Shop ranks, crates and coins for the ${m.name} game mode.`),
     alternates: { canonical: `/${slug}` },
-    openGraph: { url: `/${slug}` },
+    ...socialMeta(`/${slug}`),
   };
 }
 
