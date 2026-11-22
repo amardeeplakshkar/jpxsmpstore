@@ -10,7 +10,7 @@ import { priceProduct } from "lib/pricing";
 import { maxQtyFor } from "lib/cart";
 import { ProductPurchase } from "components/cart/product-purchase";
 import { JsonLd } from "components/seo/json-ld";
-import { absoluteUrl, metaDescription } from "lib/seo";
+import { absoluteUrl, DEFAULT_OG_IMAGES, DEFAULT_TWITTER_IMAGES, metaDescription } from "lib/seo";
 import { parseMetadata, type CoinsMetadata, type CrateMetadata, type CustomMetadata, type RankMetadata } from "lib/validation/product";
 
 const RARITY: Record<string, string> = {
@@ -33,8 +33,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title,
     description,
     alternates: { canonical: `/product/${p.slug}` },
-    openGraph: { type: "website", url: `/product/${p.slug}`, title, description, images: image ? [{ url: image, alt: p.name }] : undefined },
-    twitter: { card: image ? "summary_large_image" : "summary", title, description, images: image ? [image] : undefined },
+    openGraph: { type: "website", url: `/product/${p.slug}`, title, description, images: image ? [{ url: image, alt: p.name }] : DEFAULT_OG_IMAGES },
+    twitter: { card: "summary_large_image", title, description, images: image ? [image] : DEFAULT_TWITTER_IMAGES },
   };
 }
 

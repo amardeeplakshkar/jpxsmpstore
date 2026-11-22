@@ -1,10 +1,11 @@
+import { socialMeta } from "lib/seo";
 import { CategoryPage } from "components/store/category-page";
 
 export const metadata = {
   title: "Minecraft Coins",
   description: "Buy in-game coin packs for JPXSMP. Delivered to your Minecraft account after UPI payment.",
   alternates: { canonical: "/coins" },
-  openGraph: { url: "/coins" },
+  ...socialMeta("/coins"),
 };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ category?: string }> }) {

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Toaster } from "components/ui/toaster";
 import { getSetting } from "lib/settings";
-import { absoluteUrl, metaDescription, siteUrl } from "lib/seo";
+import { DEFAULT_OG_IMAGES, DEFAULT_TWITTER_IMAGES, metaDescription, siteUrl } from "lib/seo";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -11,7 +11,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const [branding, homepage] = await Promise.all([getSetting("branding"), getSetting("homepage")]);
   const base = siteUrl();
   const description = metaDescription(branding.tagline, homepage.heroDescription);
-  const image = absoluteUrl(homepage.heroBannerUrl) ?? absoluteUrl(branding.logoUrl);
   return {
     metadataBase: base ? new URL(base) : undefined,
     title: { default: `${branding.storeName} Store - Minecraft Ranks, Crates & Coins`, template: `%s | ${branding.storeName}` },
@@ -27,9 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
       url: "/",
       title: branding.storeName,
       description,
-      images: image ? [{ url: image }] : undefined,
+      images: DEFAULT_OG_IMAGES,
     },
-    twitter: { card: image ? "summary_large_image" : "summary", title: branding.storeName, description, images: image ? [image] : undefined },
+    twitter: { card: "summary_large_image", title: branding.storeName, description, images: DEFAULT_TWITTER_IMAGES },
     robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
     formatDetection: { telephone: false },
   };
